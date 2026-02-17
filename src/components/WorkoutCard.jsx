@@ -2,7 +2,7 @@ import React from 'react';
 import { Clock, Dumbbell, Zap, Heart, Activity, MoreVertical, Play } from 'lucide-react';
 import clsx from 'clsx';
 
-const WorkoutCard = ({ title, duration, type, level, onClick, onStart }) => {
+const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedule }) => {
     // Color configuration based on workout type
     const typeConfig = {
         strength: {
@@ -71,13 +71,23 @@ const WorkoutCard = ({ title, duration, type, level, onClick, onStart }) => {
                 <span className="capitalize">{level}</span>
             </div>
 
-            <div className="pl-2">
+            <div className="pl-2 grid grid-cols-2 gap-2">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onSchedule && onSchedule();
+                    }}
+                    className="flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-semibold transition-colors border border-slate-800 hover:border-slate-600 hover:text-white"
+                >
+                    <Clock size={14} />
+                    Schedule
+                </button>
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         onStart && onStart();
                     }}
-                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition-colors group-hover:bg-slate-700 hover:text-white"
+                    className="flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-slate-900 text-xs font-bold transition-colors border border-emerald-500/20 hover:border-emerald-500"
                 >
                     <Play size={14} className="fill-current" />
                     Start

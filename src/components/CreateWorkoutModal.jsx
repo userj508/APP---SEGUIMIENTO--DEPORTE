@@ -18,6 +18,18 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
         setLoading(true);
 
         try {
+            // 0. Ensure Profile Exists (Self-healing for legacy users)
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert({
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+                    updated_at: new Date()
+                }, { onConflict: 'id' });
+
+            if (profileError) console.warn("Profile upsert warning:", profileError);
+
             // 1. Insert Workout
             const { data: workout, error } = await supabase
                 .from('workouts')

@@ -4,6 +4,7 @@ import WeekCalendar from '../components/WeekCalendar';
 import WorkoutCard from '../components/WorkoutCard';
 import Section from '../components/Section';
 import CreateWorkoutModal from '../components/CreateWorkoutModal';
+import ScheduleWorkoutModal from '../components/ScheduleWorkoutModal';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -13,6 +14,8 @@ const Plan = () => {
     const [workouts, setWorkouts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [workoutToSchedule, setWorkoutToSchedule] = useState(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0); // Hack to force refresh calendar
 
     // Fetch Workouts
     useEffect(() => {
@@ -42,6 +45,12 @@ const Plan = () => {
         setWorkouts([newWorkout, ...workouts]);
     };
 
+    const handleScheduleComplete = () => {
+        setWorkoutToSchedule(null);
+        setRefreshTrigger(prev => prev + 1); // Refresh calendar
+        alert("Workout Scheduled!");
+    };
+
     return (
         <div className="min-h-screen bg-slate-950 text-white px-5 pt-10 pb-28 relative">
             <header className="mb-6 flex justify-between items-end">
@@ -55,7 +64,7 @@ const Plan = () => {
             </header>
 
             {/* Weekly Calendar */}
-            <WeekCalendar />
+            <WeekCalendar key={refreshTrigger} />
 
             {/* AI Generation / Quick Add Actions */}
             <div className="grid grid-cols-2 gap-3 mb-8">
@@ -88,6 +97,7 @@ const Plan = () => {
                                     type={workout.type}
                                     level={workout.difficulty}
                                     onStart={() => { }} // Handled by Link wrapper
+                                    onSchedule={() => setWorkoutToSchedule(workout)}
                                 />
                             </Link>
                         ))}
@@ -110,6 +120,14 @@ const Plan = () => {
                 <CreateWorkoutModal
                     onClose={() => setShowCreateModal(false)}
                     onWorkoutCreated={handleWorkoutCreated}
+                />
+            )}
+
+            {workoutToSchedule && (
+                <ScheduleWorkoutModal
+                    workout={workoutToSchedule}
+                    onClose={() => setWorkoutToSchedule(null)}
+                    onScheduled={handleScheduleComplete}
                 />
             )}
         </div>
