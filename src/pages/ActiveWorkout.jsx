@@ -186,22 +186,28 @@ const ActiveWorkout = () => {
                                     key={ex.id}
                                     onClick={() => setActiveExerciseIndex(idx)}
                                     className={clsx(
-                                        "min-w-[140px] p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between h-[100px]",
+                                        "min-w-[140px] p-4 rounded-2xl border transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px]",
                                         isActive
-                                            ? "bg-slate-800 border-emerald-500/50 shadow-lg shadow-emerald-900/20"
+                                            ? "bg-slate-800 border-emerald-500 ring-4 ring-emerald-500/10 shadow-2xl shadow-emerald-900/40 scale-105 z-10" // Active: POP
                                             : isDone
-                                                ? "bg-slate-900/50 border-slate-800 opacity-60"
-                                                : "bg-slate-900 border-slate-800 hover:border-slate-700"
+                                                ? "bg-transparent border-slate-800/50 opacity-40 grayscale" // Done: Recede
+                                                : "bg-transparent border-slate-800/50 hover:border-slate-700 hover:bg-slate-900/30" // Pending: Ghost
                                     )}
                                 >
                                     <div className="flex justify-between items-start mb-2">
-                                        <div className={clsx("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold", isActive ? "bg-emerald-500 text-slate-900" : "bg-slate-800 text-slate-500")}>
+                                        <div className={clsx(
+                                            "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors",
+                                            isActive ? "bg-emerald-500 text-slate-900" : "bg-slate-800/50 text-slate-600"
+                                        )}>
                                             {idx + 1}
                                         </div>
                                         {isDone && <span className="text-[10px] font-bold text-emerald-500">DONE</span>}
                                     </div>
                                     <div>
-                                        <p className={clsx("text-sm font-bold truncate", isActive ? "text-white" : "text-slate-400")}>{ex.name}</p>
+                                        <p className={clsx(
+                                            "text-sm font-bold truncate transition-colors",
+                                            isActive ? "text-white" : "text-slate-500" // Dimmer text for pending
+                                        )}>{ex.name}</p>
                                         <div className="flex gap-1 mt-2">
                                             {ex.sets.map((s, i) => (
                                                 <div
@@ -212,7 +218,7 @@ const ActiveWorkout = () => {
                                                             ? "bg-emerald-500"
                                                             : isActive
                                                                 ? "bg-slate-600"
-                                                                : "bg-slate-700"
+                                                                : "bg-slate-800" // Very dark dots for pending
                                                     )}
                                                 />
                                             ))}
