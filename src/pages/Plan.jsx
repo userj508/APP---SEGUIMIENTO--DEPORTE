@@ -1,21 +1,49 @@
-import React, { useState } from 'react';
-import { Plus, SlidersHorizontal, Wand2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, SlidersHorizontal, Wand2, Loader2 } from 'lucide-react';
 import WeekCalendar from '../components/WeekCalendar';
 import WorkoutCard from '../components/WorkoutCard';
 import Section from '../components/Section';
+import CreateWorkoutModal from '../components/CreateWorkoutModal';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 const Plan = () => {
-    // Mock saved workouts
-    const [savedWorkouts] = useState([
-        { id: 1, title: 'Upper Body Power', duration: 45, type: 'Strength', level: 'Advanced' },
-        { id: 2, title: 'HIIT Cardio Blast', duration: 25, type: 'HIIT', level: 'Intermediate' },
-        { id: 3, title: 'Full Body Mobility', duration: 20, type: 'Mobility', level: 'Beginner' },
-        { id: 4, title: 'Leg Day Crusher', duration: 55, type: 'Strength', level: 'Advanced' },
-        { id: 5, title: 'Zone 2 Run', duration: 40, type: 'Cardio', level: 'All Levels' },
-    ]);
+    const { user } = useAuth();
+    const [workouts, setWorkouts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+
+    // Fetch Workouts
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchWorkouts = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('workouts')
+                    .select('*')
+                    .or(`user_id.eq.${user.id},user_id.is.null`) // Own + System workouts
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                setWorkouts(data || []);
+            } catch (error) {
+                console.error("Error fetching workouts:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchWorkouts();
+    }, [user]);
+
+    const handleWorkoutCreated = (newWorkout) => {
+        setWorkouts([newWorkout, ...workouts]);
+    };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white px-5 pt-10 pb-28">
+        <div className="min-h-screen bg-slate-950 text-white px-5 pt-10 pb-28 relative">
             <header className="mb-6 flex justify-between items-end">
                 <div>
                     <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Your Schedule</h2>
@@ -36,7 +64,10 @@ const Plan = () => {
                     <span className="text-sm font-bold">Generate Week</span>
                     <span className="text-[10px] opacity-75 mt-0.5">AI Powered</span>
                 </button>
-                <button className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 transition-colors">
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 transition-colors active:scale-95"
+                >
                     <Plus size={24} className="mb-2 text-slate-500" />
                     <span className="text-sm font-bold">Create Custom</span>
                     <span className="text-[10px] text-slate-500 mt-0.5">Manual Builder</span>
@@ -45,27 +76,42 @@ const Plan = () => {
 
             {/* Saved Workouts */}
             <Section title="Saved Workouts" action={<button className="text-sm text-emerald-500 font-bold">View All</button>}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {savedWorkouts.map(workout => (
-                        <WorkoutCard
-                            key={workout.id}
-                            title={workout.title}
-                            duration={workout.duration}
-                            type={workout.type}
-                            level={workout.level}
-                            onStart={() => console.log('Start workout', workout.id)}
-                        />
-                    ))}
+                {loading ? (
+                    <div className="flex justify-center py-10"><Loader2 className="animate-spin text-emerald-500" /></div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {workouts.map(workout => (
+                            <Link to={`/workout/${workout.id}`} key={workout.id}>
+                                <WorkoutCard
+                                    title={workout.title}
+                                    duration={workout.duration_minutes}
+                                    type={workout.type}
+                                    level={workout.difficulty}
+                                    onStart={() => { }} // Handled by Link wrapper
+                                />
+                            </Link>
+                        ))}
 
-                    {/* Add New Placeolder Card */}
-                    <button className="border-2 border-dashed border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[140px] hover:border-slate-700 hover:bg-slate-900/50 transition-all text-slate-600 hover:text-slate-400 group">
-                        <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                            <Plus size={24} />
-                        </div>
-                        <span className="text-xs font-bold uppercase tracking-wide">Save New Template</span>
-                    </button>
-                </div>
+                        {/* Add New Placeholder Card */}
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="border-2 border-dashed border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[140px] hover:border-slate-700 hover:bg-slate-900/50 transition-all text-slate-600 hover:text-slate-400 group"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <Plus size={24} />
+                            </div>
+                            <span className="text-xs font-bold uppercase tracking-wide">Save New Template</span>
+                        </button>
+                    </div>
+                )}
             </Section>
+
+            {showCreateModal && (
+                <CreateWorkoutModal
+                    onClose={() => setShowCreateModal(false)}
+                    onWorkoutCreated={handleWorkoutCreated}
+                />
+            )}
         </div>
     );
 };
