@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Athlete Focus Home Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#136dec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101822",
+                        "slate-card": "#1c2632",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .ios-safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .ios-safe-top {
+            padding-top: env(safe-area-inset-top);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Status Bar / Header Space -->
+<header class="ios-safe-top px-8 pt-12 pb-8">
+<div class="flex flex-col space-y-1">
+<span class="text-sm font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Monday, Oct 24</span>
+<h1 class="text-3xl font-light text-slate-800 dark:text-white">Ready to train?</h1>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 px-8 space-y-10">
+<!-- Today's Workout Card -->
+<section>
+<div class="relative overflow-hidden bg-white dark:bg-slate-card rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 transition-all active:scale-[0.98]">
+<!-- Subtle decorative background element -->
+<div class="absolute -right-12 -top-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-6">
+<div>
+<span class="text-xs font-semibold text-primary/80 dark:text-primary uppercase tracking-widest block mb-2">Today's Session</span>
+<h2 class="text-2xl font-semibold dark:text-white">Leg Day</h2>
+<div class="flex items-center gap-4 mt-2 text-slate-500 dark:text-slate-400 text-sm">
+<span class="flex items-center gap-1">
+<span class="material-icons-round text-sm">schedule</span> 45 mins
+                                </span>
+<span class="flex items-center gap-1">
+<span class="material-icons-round text-sm">bolt</span> Advanced
+                                </span>
+</div>
+</div>
+<div class="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-lg flex items-center justify-center">
+<span class="material-icons-round text-primary">fitness_center</span>
+</div>
+</div>
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-4 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-colors">
+<span class="material-icons-round">play_arrow</span>
+                        Start Workout
+                    </button>
+</div>
+</div>
+</section>
+<!-- Upcoming Section -->
+<section class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Upcoming</h3>
+<button class="text-xs text-primary font-medium">View Schedule</button>
+</div>
+<div class="space-y-3">
+<!-- Upcoming Item 1 -->
+<div class="flex items-center justify-between p-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-lg border border-slate-200/50 dark:border-slate-700/30">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400">
+<span class="text-xs font-bold">TUE</span>
+</div>
+<div>
+<p class="font-medium text-sm dark:text-slate-200">Push Strength</p>
+<p class="text-xs text-slate-400">50 mins • Heavy</p>
+</div>
+</div>
+<span class="material-icons-round text-slate-300 dark:text-slate-600">chevron_right</span>
+</div>
+<!-- Upcoming Item 2 -->
+<div class="flex items-center justify-between p-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-lg border border-slate-200/50 dark:border-slate-700/30">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400">
+<span class="text-xs font-bold">WED</span>
+</div>
+<div>
+<p class="font-medium text-sm dark:text-slate-200">Mobility Flow</p>
+<p class="text-xs text-slate-400">20 mins • Active Recovery</p>
+</div>
+</div>
+<span class="material-icons-round text-slate-300 dark:text-slate-600">chevron_right</span>
+</div>
+<!-- Upcoming Item 3 -->
+<div class="flex items-center justify-between p-4 bg-slate-100/50 dark:bg-slate-800/30 rounded-lg border border-slate-200/50 dark:border-slate-700/30">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400">
+<span class="text-xs font-bold">THU</span>
+</div>
+<div>
+<p class="font-medium text-sm dark:text-slate-200">Pull &amp; Core</p>
+<p class="text-xs text-slate-400">45 mins • Intermediate</p>
+</div>
+</div>
+<span class="material-icons-round text-slate-300 dark:text-slate-600">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Recovery Metric Subtle Card -->
+<section class="pb-12">
+<div class="p-6 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 flex items-center gap-4">
+<div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+<p class="text-sm text-slate-500 dark:text-slate-400 font-light">
+                    Your recovery is at <span class="font-medium text-slate-800 dark:text-slate-200">92%</span>. Optimal for high intensity today.
+                </p>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="ios-safe-bottom bg-white/80 dark:bg-background-dark/80 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 sticky bottom-0 w-full px-8 py-4">
+<div class="max-w-md mx-auto flex justify-between items-center">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-icons-round">home</span>
+<span class="text-[10px] font-medium">HOME</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" href="#">
+<span class="material-icons-round">analytics</span>
+<span class="text-[10px] font-medium">STATS</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" href="#">
+<span class="material-icons-round">calendar_today</span>
+<span class="text-[10px] font-medium">PLAN</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" href="#">
+<span class="material-icons-round">person_outline</span>
+<span class="text-[10px] font-medium">PROFILE</span>
+</a>
+</div>
+<!-- Home Indicator Mockup -->
+<div class="w-32 h-1 bg-slate-300 dark:bg-slate-800 rounded-full mx-auto mt-6"></div>
+</nav>
+</body></html>

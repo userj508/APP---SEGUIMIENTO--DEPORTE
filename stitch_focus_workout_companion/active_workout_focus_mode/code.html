@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Active Workout Focus Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#307de8",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111821",
+                        "slate-custom": "#1e293b",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center">
+<!-- iOS Frame Mockup Container -->
+<div class="relative w-full max-w-[430px] h-[932px] bg-background-light dark:bg-background-dark shadow-2xl overflow-hidden md:rounded-[3rem] md:border-[8px] border-slate-200 dark:border-slate-800 flex flex-col">
+<!-- Status Bar Area (iOS Style) -->
+<div class="h-12 w-full flex items-center justify-between px-8 pt-4">
+<span class="text-sm font-semibold">9:41</span>
+<div class="flex items-center space-x-1.5">
+<span class="material-icons text-sm">signal_cellular_alt</span>
+<span class="material-icons text-sm">wifi</span>
+<span class="material-icons text-sm rotate-90">battery_full</span>
+</div>
+</div>
+<!-- Header -->
+<header class="px-8 py-6 flex items-center justify-between mt-4">
+<div>
+<h1 class="text-2xl font-bold tracking-tight">Leg Day</h1>
+<p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Focus Session</p>
+</div>
+<div class="bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
+<span class="text-primary font-mono font-medium text-lg">00:24:15</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 px-8 flex flex-col items-center justify-between py-8">
+<!-- Current Exercise Focus Card -->
+<div class="w-full text-center space-y-2">
+<h2 class="text-3xl font-bold text-slate-900 dark:text-white">Barbell Squats</h2>
+<div class="flex items-center justify-center space-x-2">
+<span class="px-3 py-1 bg-primary text-white text-sm font-semibold rounded-full uppercase">Set 2/4</span>
+<span class="text-slate-400 font-medium">• 125 kg</span>
+</div>
+</div>
+<!-- Visual Rest Timer -->
+<div class="relative flex items-center justify-center w-72 h-72">
+<!-- Circular Background Progress Track -->
+<svg class="absolute w-full h-full -rotate-90">
+<circle class="text-slate-200 dark:text-slate-800" cx="50%" cy="50%" fill="transparent" r="45%" stroke="currentColor" stroke-width="8"></circle>
+<!-- Active Progress Ring (Partial) -->
+<circle class="text-primary" cx="50%" cy="50%" fill="transparent" r="45%" stroke="currentColor" stroke-dasharray="100 100" stroke-linecap="round" stroke-width="12" style="stroke-dasharray: 280, 1000;"></circle>
+</svg>
+<!-- Time Text -->
+<div class="flex flex-col items-center justify-center">
+<span class="text-6xl font-bold text-slate-900 dark:text-white tabular-nums">00:45</span>
+<span class="text-sm font-medium text-primary/80 uppercase tracking-widest mt-2">Resting</span>
+</div>
+</div>
+<!-- Workout Checklist -->
+<div class="w-full space-y-4">
+<p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] px-2 mb-2 text-center">Upcoming Queue</p>
+<div class="space-y-3">
+<!-- Exercise 1 (Done) -->
+<div class="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-800/40 rounded-xl opacity-60">
+<div class="flex items-center space-x-4">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+<span class="material-icons text-white text-sm">check</span>
+</div>
+<span class="font-medium line-through">Barbell Squats</span>
+</div>
+<span class="text-xs font-semibold text-slate-400">Set 1 Complete</span>
+</div>
+<!-- Exercise 2 (Current Next) -->
+<div class="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-xl">
+<div class="flex items-center space-x-4">
+<div class="w-6 h-6 rounded-full border-2 border-primary"></div>
+<span class="font-semibold">Lunges</span>
+</div>
+<div class="flex items-center space-x-1">
+<span class="material-icons text-xs text-primary">fitness_center</span>
+<span class="text-xs font-semibold text-primary">3 Sets</span>
+</div>
+</div>
+<!-- Exercise 3 (Next) -->
+<div class="flex items-center justify-between p-4 bg-transparent border border-slate-200 dark:border-slate-800 rounded-xl">
+<div class="flex items-center space-x-4">
+<div class="w-6 h-6 rounded-full border-2 border-slate-300 dark:border-slate-700"></div>
+<span class="font-medium text-slate-400">Calf Raises</span>
+</div>
+<span class="text-xs font-semibold text-slate-400">4 Sets</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer / Action Area -->
+<footer class="p-8 pb-12">
+<button class="w-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 py-4 rounded-full font-bold transition-all flex items-center justify-center space-x-2">
+<span class="material-icons text-lg">flag</span>
+<span>Finish Workout</span>
+</button>
+<!-- iOS Home Indicator -->
+<div class="mt-8 flex justify-center">
+<div class="w-32 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full"></div>
+</div>
+</footer>
+<!-- Hidden images for data-alt requirement if background needed -->
+<div class="hidden">
+<img data-alt="Dark abstract geometric background pattern for fitness app" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_Rzb4ZUwnFi0HC9elUJ4Z55mnDzCphg9fF6-rfB9b9BcdciG6wiUQbyBE7nUAqhTL1N5wwQiJgUAGQBymuNXXp-epwcjR67VTkjheFlo-WZ_nTfDupB9iPgnAJD0NfUVWWG5whUJbMX7eiBIMiGKz2aZwGwfThlNr2qU8LZJ4WfNk8FecYk5DxuCpmDqOCrJrNCHvTMScr-MaZBTetU_G6YkJdp-x2VTeK7qf_hCY_RbfOGOJo1tpk86424an5BJ3t4RTu-LYUp8"/>
+<img data-alt="Map showing gym location in Los Angeles" data-location="Los Angeles" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfqfuwgZS_SBiOtV_ihkepUHc_HmW18-aeNU2Mkq71jd0IjHWd_qYhU1L6Vb8TzTMYsUSgk69XtCNNbwEYSRwC-cqdzm9TTNqZamAdiewRJbvUlCfn18TNCgz5f8FS33LjZu-dPpPrdVcCwhE5dfUALhq4OGrV9nzlEaomJ-7l3aFh9zhHO-C_6va6Ttt4E16HHkayEw72v_Nac8dO9VlBMmDZ0agTQk9yfm5RZJg8x9dKLT-6e-doDH5kdOwbYCMDxj_WPch5Cbc"/>
+</div>
+</div>
+</body></html>
