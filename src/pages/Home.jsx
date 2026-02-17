@@ -24,7 +24,7 @@ const Home = () => {
                     .from('profiles')
                     .select('full_name')
                     .eq('id', user.id)
-                    .single();
+                    .maybeSingle();
 
                 if (profile?.full_name) {
                     setHeaderName(profile.full_name.split(' ')[0]);
