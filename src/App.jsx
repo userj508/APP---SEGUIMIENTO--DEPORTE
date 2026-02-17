@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Plan from './pages/Plan';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
+import ActiveWorkout from './pages/ActiveWorkout';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
