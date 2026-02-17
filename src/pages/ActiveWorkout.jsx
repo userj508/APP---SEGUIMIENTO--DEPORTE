@@ -25,7 +25,7 @@ const ActiveWorkout = () => {
     // --- INITIALIZATION ---
     useEffect(() => {
         const fetchWorkoutData = async () => {
-            if (!workoutId) {
+            if (!workoutId || workoutId === 'mock-1') {
                 // Mock data fallback for direct access without ID (or redirect)
                 // For now, let's just load a default mock if no ID
                 setExercises([
