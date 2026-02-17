@@ -1,52 +1,106 @@
-
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, MoreVertical, Settings2, Dumbbell } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ChevronLeft, MoreVertical, Settings2, Dumbbell, Loader2 } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import WorkoutTimer from '../components/WorkoutTimer';
 import clsx from 'clsx';
 import confetti from 'canvas-confetti';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const ActiveWorkout = () => {
+    const { workoutId } = useParams();
+    const { user } = useAuth();
+    const navigate = useNavigate();
+
     // --- STATE ---
+    const [loading, setLoading] = useState(true);
     const [elapsed, setElapsed] = useState(0);
     const [restTime, setRestTime] = useState(60); // Default rest
     const [isResting, setIsResting] = useState(false);
     const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
-    const [isCelebratingSet, setIsCelebratingSet] = useState(false); // New state for set animation
+    const [isCelebratingSet, setIsCelebratingSet] = useState(false);
+    const [exercises, setExercises] = useState([]);
+    const [workoutTitle, setWorkoutTitle] = useState("Workout");
 
-    // Initial Data
-    const [exercises, setExercises] = useState([
-        {
-            id: 1,
-            name: 'Barbell Squats',
-            targetSets: 4,
-            targetReps: 8,
-            sets: [
-                { id: '1-1', completed: false, weight: 100, reps: 8 },
-                { id: '1-2', completed: false, weight: 100, reps: 8 },
-                { id: '1-3', completed: false, weight: 100, reps: 8 },
-                { id: '1-4', completed: false, weight: 100, reps: 8 }
-            ]
-        },
-        {
-            id: 2,
-            name: 'Lunges',
-            targetSets: 3,
-            targetReps: 12,
-            sets: [
-                { id: '2-1', completed: false, weight: 40, reps: 12 },
-                { id: '2-2', completed: false, weight: 40, reps: 12 },
-                { id: '2-3', completed: false, weight: 40, reps: 12 }
-            ]
-        },
-    ]);
+    // --- INITIALIZATION ---
+    useEffect(() => {
+        const fetchWorkoutData = async () => {
+            if (!workoutId) {
+                // Mock data fallback for direct access without ID (or redirect)
+                // For now, let's just load a default mock if no ID
+                setExercises([
+                    {
+                        id: 'mock-1',
+                        name: 'Barbell Squats (Demo)',
+                        targetSets: 4,
+                        targetReps: 8,
+                        sets: Array(4).fill(0).map((_, i) => ({ id: `m-1-${i}`, completed: false, weight: 100, reps: 8 }))
+                    }
+                ]);
+                setLoading(false);
+                return;
+            }
 
-    // Derived Logic
-    const currentExercise = exercises[activeExerciseIndex];
-    const currentSetIndex = currentExercise.sets.findIndex(s => !s.completed);
-    const isExerciseComplete = currentSetIndex === -1;
-    const activeSetDisplay = isExerciseComplete ? currentExercise.sets.length : currentSetIndex + 1;
-    const currentSetData = isExerciseComplete ? currentExercise.sets[currentExercise.sets.length - 1] : currentExercise.sets[currentSetIndex];
+            try {
+                // 1. Fetch Workout Details
+                const { data: workout } = await supabase
+                    .from('workouts')
+                    .select('title')
+                    .eq('id', workoutId)
+                    .single();
+
+                if (workout) setWorkoutTitle(workout.title);
+
+                // 2. Fetch Exercises joined with workout_exercises
+                // We need to get the exercises in order
+                const { data: workoutExercises, error } = await supabase
+                    .from('workout_exercises')
+                    .select(`
+                        id,
+                        order_index,
+                        target_sets,
+                        target_reps,
+                        rest_seconds,
+                        exercises ( id, name, category, video_url )
+                    `)
+                    .eq('workout_id', workoutId)
+                    .order('order_index');
+
+                if (error) throw error;
+
+                // 3. Transform to local state format
+                const formattedExercises = workoutExercises.map(we => ({
+                    id: we.exercises.id, // Actual exercise ID
+                    workoutExerciseId: we.id, // Link for logging
+                    name: we.exercises.name,
+                    targetSets: we.target_sets,
+                    targetReps: we.target_reps,
+                    restSeconds: we.rest_seconds || 60,
+                    sets: Array(we.target_sets).fill(0).map((_, i) => ({
+                        id: `${we.id}-${i}`,
+                        completed: false,
+                        weight: 0, // In a real app, we'd fetch previous weights here
+                        reps: we.target_reps
+                    }))
+                }));
+
+                setExercises(formattedExercises);
+                if (formattedExercises.length > 0) {
+                    setRestTime(formattedExercises[0].restSeconds);
+                }
+
+            } catch (error) {
+                console.error("Error loading workout:", error);
+                alert("Failed to load workout. Please try again.");
+                navigate('/');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchWorkoutData();
+    }, [workoutId, user, navigate]);
+
 
     // --- TIMERS ---
     useEffect(() => {
@@ -67,52 +121,88 @@ const ActiveWorkout = () => {
     const formatTime = (seconds) => {
         const mm = Math.floor(seconds / 60).toString().padStart(2, '0');
         const ss = (seconds % 60).toString().padStart(2, '0');
-        return `${mm}:${ss} `;
+        return `${mm}:${ss}`;
     };
+
+    // --- FINISH WORKOUT ---
+    const activeFinishWorkout = async () => {
+        setLoading(true);
+        try {
+            const { data: log, error: logError } = await supabase
+                .from('workout_logs')
+                .insert({
+                    user_id: user.id,
+                    workout_id: workoutId, // might be null if ad-hoc/mock
+                    status: 'completed',
+                    started_at: new Date(Date.now() - elapsed * 1000).toISOString(),
+                    completed_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (logError) throw logError;
+
+            // Log Exercises (simplified: just marking completed for now)
+            // In a full app, we would loop through all sets and save them to exercise_logs
+
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#10B981', '#34D399', '#059669', '#ffffff']
+            });
+
+            setTimeout(() => {
+                alert("Workout Saved!");
+                navigate('/');
+            }, 2000);
+
+        } catch (error) {
+            console.error("Error saving log:", error);
+            alert("Error saving workout, but great job!");
+            navigate('/');
+        }
+    };
+
 
     // --- ACTIONS ---
     const handleMainAction = () => {
         if (isResting) {
-            // Skip rest
             setIsResting(false);
         } else {
             // FINISH SET
-            if (isExerciseComplete) return;
+            if (activeExerciseIndex >= exercises.length) return; // Safety
 
-            // Trigger Set Animation
+            const currentEx = exercises[activeExerciseIndex];
+            const currentSetIndex = currentEx.sets.findIndex(s => !s.completed);
+
+            if (currentSetIndex === -1) return; // Logic error, exercise shouldn't be active if done
+
+            // Animate
             setIsCelebratingSet(true);
-            setTimeout(() => setIsCelebratingSet(false), 500); // Reset after 500ms
+            setTimeout(() => setIsCelebratingSet(false), 500);
 
-            // Mark current set as complete
+            // Update State
             const newExercises = [...exercises];
-            const exercise = newExercises[activeExerciseIndex];
-            const set = exercise.sets[currentSetIndex];
-            set.completed = true;
-
+            newExercises[activeExerciseIndex].sets[currentSetIndex].completed = true;
             setExercises(newExercises);
 
-            // Start Rest (if not last set)
-            if (currentSetIndex < exercise.sets.length - 1) {
-                setRestTime(60); // Reset default rest
+            // Check what's next
+            const isExComplete = currentSetIndex === currentEx.sets.length - 1;
+
+            if (!isExComplete) {
+                // Rest between sets
+                setRestTime(currentEx.restSeconds || 60);
                 setIsResting(true);
             } else {
-                // Exercise Complete!
-
-                // Check if it was the last exercise of the workout
-                if (activeExerciseIndex === exercises.length - 1) {
-                    // WORKOUT COMPLETE!
-                    confetti({
-                        particleCount: 150,
-                        spread: 70,
-                        origin: { y: 0.6 },
-                        colors: ['#10B981', '#34D399', '#059669', '#ffffff'] // Emerald greens + white
-                    });
-                    alert("WORKOUT COMPLETE!"); // Placeholder for proper modal
+                // Exercise Done
+                if (activeExerciseIndex < exercises.length - 1) {
+                    // Go to next exercise
+                    setActiveExerciseIndex(prev => prev + 1);
+                    // Optional: Rest between exercises?
                 } else {
-                    // Move to next exercise
-                    if (activeExerciseIndex < exercises.length - 1) {
-                        setActiveExerciseIndex(prev => prev + 1);
-                    }
+                    // WORKOUT COMPLETE
+                    activeFinishWorkout();
                 }
             }
         }
@@ -121,6 +211,23 @@ const ActiveWorkout = () => {
     const handleAdjustTime = (amount) => {
         setRestTime(prev => Math.max(0, prev + amount));
     };
+
+    if (loading) {
+        return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-emerald-500"><Loader2 className="animate-spin" size={40} /></div>;
+    }
+
+    if (exercises.length === 0) {
+        return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">No exercises found.</div>;
+    }
+
+    const currentExercise = exercises[activeExerciseIndex];
+    // Safety check
+    if (!currentExercise) return null;
+
+    const currentSetIndex = currentExercise.sets.findIndex(s => !s.completed);
+    const isExerciseComplete = currentSetIndex === -1;
+    const activeSetDisplay = isExerciseComplete ? currentExercise.sets.length : currentSetIndex + 1;
+    const currentSetData = isExerciseComplete ? currentExercise.sets[currentExercise.sets.length - 1] : currentExercise.sets[currentSetIndex];
 
     return (
         <div className="min-h-screen bg-slate-950 text-white flex flex-col relative overflow-hidden">
@@ -133,7 +240,7 @@ const ActiveWorkout = () => {
                     <ChevronLeft size={20} />
                 </Link>
                 <div className="flex flex-col items-center">
-                    <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Active Workout</span>
+                    <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">{workoutTitle}</span>
                     <span className="font-mono text-slate-400 text-sm">{formatTime(elapsed)}</span>
                 </div>
                 <button className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer z-50">
@@ -153,7 +260,7 @@ const ActiveWorkout = () => {
                     <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight mb-2">
                         {currentExercise.name}
                     </h1>
-                    <p className="text-slate-500 text-sm font-medium">{currentSetData.weight}kg • Target: {currentExercise.targetReps} reps</p>
+                    <p className="text-slate-500 text-sm font-medium">{currentSetData.weight > 0 ? `${currentSetData.weight}kg • ` : ''}Target: {currentExercise.targetReps} reps</p>
                 </div>
 
                 {/* 2. Central Interactive Area */}

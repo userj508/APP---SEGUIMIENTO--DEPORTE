@@ -4,34 +4,94 @@ import { Link } from 'react-router-dom';
 import Section from '../components/Section';
 import clsx from 'clsx';
 
-const Home = () => {
-    // Mock State: In a real app, this would come from a database/context
-    // Set to null to test "Recommended" state, or an object to test "Scheduled" state
-    const [todayWorkout, setTodayWorkout] = useState({
-        id: 1,
-        title: "Upper Body Power",
-        duration: "45 min",
-        type: "Strength",
-        isScheduled: true // Change this to false to simulate no plan -> specific recommendation logic
-    });
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
-    // Example: If no scheduled workout, we suggest one
-    const recommendedWorkout = {
-        title: "Mobility Flow",
-        duration: "20 min",
-        reason: "Active Recovery",
-        type: "Recovery"
+const Home = () => {
+    const { user } = useAuth();
+    const [headerName, setHeaderName] = useState('Athlete');
+    const [featuredWorkout, setFeaturedWorkout] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                // 1. Get Profile Name
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('full_name')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile?.full_name) {
+                    setHeaderName(profile.full_name.split(' ')[0]);
+                } else if (user.email) {
+                    setHeaderName(user.email.split('@')[0]);
+                }
+
+                // 2. Check for Scheduled Workout TODAY
+                const today = new Date().toISOString().split('T')[0];
+                const { data: schedule } = await supabase
+                    .from('schedule')
+                    .select('*, workouts(*)')
+                    .eq('user_id', user.id)
+                    .eq('scheduled_date', today)
+                    .maybeSingle();
+
+                if (schedule?.workouts) {
+                    setFeaturedWorkout({
+                        ...schedule.workouts,
+                        isScheduled: true
+                    });
+                } else {
+                    // 3. Fallback: Get a random "Recommended" workout
+                    // First, get ALL workouts to pick one. (Inefficient for large DB, fine for MVP)
+                    const { data: workouts } = await supabase
+                        .from('workouts')
+                        .select('*')
+                        .limit(5); // Just grab a few
+
+                    if (workouts && workouts.length > 0) {
+                        const random = workouts[Math.floor(Math.random() * workouts.length)];
+                        setFeaturedWorkout({
+                            ...random,
+                            isScheduled: false,
+                            reason: "Suggested for You"
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching home data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [user]);
+
+    // Fallback if DB is empty and no workout found
+    const defaultWorkout = {
+        id: 'mock-1',
+        title: "Intro Strength",
+        duration_minutes: 30,
+        type: "Strength",
+        reason: "Get Started",
+        isScheduled: false
     };
 
-    const activeHero = todayWorkout?.isScheduled ? todayWorkout : recommendedWorkout;
-    const isRecommendation = !todayWorkout?.isScheduled;
+    const activeHero = featuredWorkout || defaultWorkout;
+    const isRecommendation = !activeHero.isScheduled;
 
     return (
         <div className="min-h-screen bg-slate-950 text-white px-5 pt-8 pb-28">
             {/* Header / Greeting */}
             <header className="mb-8 flex justify-between items-center">
                 <div>
-                    <p className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Welcome back</p>
+                    <p className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Welcome back, {headerName}</p>
                     <h1 className="text-3xl font-bold tracking-tight text-white">Let's crush it.</h1>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
@@ -68,19 +128,19 @@ const Home = () => {
                                     Scheduled Today
                                 </span>
                             )}
-                            <span className="text-slate-400 font-mono text-xs">{activeHero.duration}</span>
+                            <span className="text-slate-400 font-mono text-xs">{activeHero.duration_minutes || activeHero.duration || 45} min</span>
                         </div>
 
                         <h2 className="text-3xl font-extrabold text-white mb-2 leading-tight">{activeHero.title}</h2>
 
                         <p className="text-slate-400 text-sm mb-8 max-w-[90%]">
                             {isRecommendation
-                                ? `Based on your recovery, we suggest a ${activeHero.reason} session.`
+                                ? `Based on your recovery, we suggest a ${activeHero.reason || 'Quick Session'} session.`
                                 : "Ready to hit your target? Let's get this done."}
                         </p>
 
                         <div className="flex items-center gap-3">
-                            <Link to="/workout" className={clsx(
+                            <Link to={`/workout/${activeHero.id}`} className={clsx(
                                 "flex-1 text-slate-950 font-bold py-4 px-6 rounded-xl flex items-center justify-center transition-all transform active:scale-95 shadow-lg",
                                 isRecommendation
                                     ? "bg-purple-500 hover:bg-purple-400 shadow-purple-500/25"
