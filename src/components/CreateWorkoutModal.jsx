@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Loader2, Dumbbell } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Loader2, Dumbbell, Plus, Trash2, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -11,14 +11,64 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
     const [type, setType] = useState('Strength');
     const [duration, setDuration] = useState(45);
     const [difficulty, setDifficulty] = useState('Intermediate');
-    const [exercisesText, setExercisesText] = useState(''); // Simple text area for now
+
+    // Exercise Selection State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [selectedExercises, setSelectedExercises] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    // Search Exercises
+    useEffect(() => {
+        const searchExercises = async () => {
+            if (searchQuery.length < 2) {
+                setSearchResults([]);
+                return;
+            }
+
+            setIsSearching(true);
+            try {
+                const { data } = await supabase
+                    .from('exercises')
+                    .select('*')
+                    .ilike('name', `%${searchQuery}%`)
+                    .limit(5);
+                setSearchResults(data || []);
+            } catch (error) {
+                console.error("Error searching exercises:", error);
+            } finally {
+                setIsSearching(false);
+            }
+        };
+
+        const timeoutId = setTimeout(searchExercises, 300);
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+    const addExercise = (exercise) => {
+        if (!selectedExercises.some(e => e.id === exercise.id)) {
+            setSelectedExercises([...selectedExercises, { ...exercise, sets: 3, reps: 10 }]);
+        }
+        setSearchQuery('');
+        setSearchResults([]);
+    };
+
+    const removeExercise = (exerciseId) => {
+        setSelectedExercises(selectedExercises.filter(e => e.id !== exerciseId));
+    };
+
+    const handleSetsRepsChange = (exerciseId, field, value) => {
+        setSelectedExercises(selectedExercises.map(e =>
+            e.id === exerciseId ? { ...e, [field]: value } : e
+        ));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            // 0. Ensure Profile Exists (Self-healing for legacy users)
+            // 0. Ensure Profile Exists
             const { error: profileError } = await supabase
                 .from('profiles')
                 .upsert({
@@ -46,44 +96,17 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
 
             if (error) throw error;
 
-            // 2. Handle Exercises (Simple Text Parser)
-            const lines = exercisesText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            // 2. Insert Selected Exercises
+            if (selectedExercises.length > 0) {
+                const workoutExercises = selectedExercises.map((ex, index) => ({
+                    workout_id: workout.id,
+                    exercise_id: ex.id,
+                    order_index: index,
+                    target_sets: parseInt(ex.sets) || 3,
+                    target_reps: parseInt(ex.reps) || 10,
+                    rest_seconds: 60
+                }));
 
-            if (lines.length > 0) {
-                // Determine exercise IDs (Find or Create)
-                const exercisePromises = lines.map(async (line, index) => {
-                    // Try to find existing
-                    const { data: existing } = await supabase
-                        .from('exercises')
-                        .select('id')
-                        .ilike('name', line)
-                        .maybeSingle();
-
-                    let exerciseId = existing?.id;
-
-                    if (!exerciseId) {
-                        // Create new exercise
-                        const { data: newExercise } = await supabase
-                            .from('exercises')
-                            .insert({ name: line, category: 'Other' })
-                            .select('id')
-                            .single();
-                        exerciseId = newExercise.id;
-                    }
-
-                    return {
-                        workout_id: workout.id,
-                        exercise_id: exerciseId,
-                        order_index: index,
-                        target_sets: 3, // Default
-                        target_reps: 10, // Default
-                        rest_seconds: 60 // Default
-                    };
-                });
-
-                const workoutExercises = await Promise.all(exercisePromises);
-
-                // Bulk Insert Link Table
                 const { error: linkError } = await supabase
                     .from('workout_exercises')
                     .insert(workoutExercises);
@@ -101,9 +124,29 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
         }
     };
 
+    // Quick add custom exercise if not found
+    const createCustomExercise = async () => {
+        if (!searchQuery) return;
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('exercises')
+                .insert({ name: searchQuery, category: 'Custom' })
+                .select()
+                .single();
+
+            if (error) throw error;
+            addExercise(data);
+        } catch (error) {
+            console.error("Error creating custom exercise:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 relative animate-in fade-in zoom-in duration-200">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 relative animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
@@ -117,92 +160,134 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
                     </div>
                     <div>
                         <h2 className="text-lg font-bold text-white">New Workout</h2>
-                        <p className="text-xs text-slate-400">Create a template for your routine.</p>
+                        <p className="text-xs text-slate-400">Build your custom routine.</p>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Title</label>
-                        <input
-                            type="text"
-                            required
-                            value={title}
-                            onChange={e => setTitle(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none"
-                            placeholder="e.g. Leg Day Destruction"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Basic Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Type</label>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Title</label>
+                            <input
+                                type="text"
+                                required
+                                value={title}
+                                onChange={e => setTitle(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none text-sm"
+                                placeholder="e.g. Upper Body Power"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Type</label>
                             <select
                                 value={type}
                                 onChange={e => setType(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none"
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none text-sm"
                             >
                                 <option value="Strength">Strength</option>
                                 <option value="Cardio">Cardio</option>
                                 <option value="HIIT">HIIT</option>
                                 <option value="Mobility">Mobility</option>
-                                <option value="Recovery">Recovery</option>
                             </select>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Duration (min)</label>
+                    </div>
+
+                    {/* Exercise Selector */}
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Build Routine</label>
+
+                        {/* Search Input */}
+                        <div className="relative mb-3">
+                            <Search size={16} className="absolute left-3 top-3 text-slate-500" />
                             <input
-                                type="number"
-                                value={duration}
-                                onChange={e => setDuration(parseInt(e.target.value))}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none"
+                                type="text"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-white focus:border-emerald-500 outline-none text-sm"
+                                placeholder="Search exercises (e.g. Bench Press)..."
                             />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Difficulty</label>
-                        <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-                            {['Beginner', 'Intermediate', 'Advanced'].map(l => (
+                            {searchQuery && searchResults.length === 0 && !isSearching && (
                                 <button
-                                    key={l}
                                     type="button"
-                                    onClick={() => setDifficulty(l)}
-                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${difficulty === l ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                                    onClick={createCustomExercise}
+                                    className="absolute right-2 top-2 bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-lg transition-colors border border-slate-700"
                                 >
-                                    {l}
+                                    + Add Custom
                                 </button>
-                            ))}
+                            )}
                         </div>
-                    </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Exercises (One per line)</label>
-                        <textarea
-                            value={exercisesText}
-                            onChange={e => setExercisesText(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none h-32 resize-none text-sm font-mono"
-                            placeholder="Squats&#10;Bench Press&#10;Deadlift"
-                            required
-                        />
-                    </div>
+                        {/* Search Results Dropdown */}
+                        {searchResults.length > 0 && (
+                            <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden mb-3 max-h-40 overflow-y-auto">
+                                {searchResults.map(ex => (
+                                    <button
+                                        key={ex.id}
+                                        type="button"
+                                        onClick={() => addExercise(ex)}
+                                        className="w-full text-left px-4 py-2 hover:bg-slate-700 text-sm text-slate-200 border-b border-slate-700/50 last:border-0 flex justify-between items-center group"
+                                    >
+                                        <span>{ex.name}</span>
+                                        <Plus size={14} className="opacity-0 group-hover:opacity-100 text-emerald-500" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
-                    <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Description (Optional)</label>
-                        <textarea
-                            value={description}
-                            onChange={e => setDescription(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none h-20 resize-none text-sm"
-                            placeholder="Notes about this workout..."
-                        />
+                        {/* Selected Exercises List */}
+                        <div className="space-y-2">
+                            {selectedExercises.map((ex, idx) => (
+                                <div key={ex.id} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 flex items-center justify-between group">
+                                    <div>
+                                        <span className="text-xs text-slate-500 font-bold mr-2">#{idx + 1}</span>
+                                        <span className="text-sm font-medium text-slate-200">{ex.name}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 bg-slate-900 rounded-lg px-2 py-1 border border-slate-800">
+                                            <span className="text-[10px] text-slate-500 uppercase">Sets</span>
+                                            <input
+                                                type="number"
+                                                value={ex.sets}
+                                                onChange={e => handleSetsRepsChange(ex.id, 'sets', e.target.value)}
+                                                className="w-8 bg-transparent text-center text-xs font-bold focus:outline-none"
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-1 bg-slate-900 rounded-lg px-2 py-1 border border-slate-800">
+                                            <span className="text-[10px] text-slate-500 uppercase">Reps</span>
+                                            <input
+                                                type="number"
+                                                value={ex.reps}
+                                                onChange={e => handleSetsRepsChange(ex.id, 'reps', e.target.value)}
+                                                className="w-8 bg-transparent text-center text-xs font-bold focus:outline-none"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeExercise(ex.id)}
+                                            className="text-slate-600 hover:text-rose-500 p-1.5 hover:bg-rose-500/10 rounded-lg transition-colors ml-1"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {selectedExercises.length === 0 && (
+                                <div className="text-center py-6 border-2 border-dashed border-slate-800 rounded-xl">
+                                    <p className="text-xs text-slate-500">No exercises added yet.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={loading}
-                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold py-4 rounded-xl mt-4 flex items-center justify-center transition-all active:scale-95"
+                        disabled={loading || selectedExercises.length === 0}
+                        className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 font-bold py-4 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : 'Create Template'}
+                        {loading ? <Loader2 className="animate-spin" /> : `Save Workout (${selectedExercises.length} Exercises)`}
                     </button>
                 </form>
             </div>

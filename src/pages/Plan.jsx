@@ -96,7 +96,11 @@ const Plan = () => {
                                     duration={workout.duration_minutes}
                                     type={workout.type}
                                     level={workout.difficulty}
-                                    onStart={() => { }} // Handled by Link wrapper
+                                    onStart={() => {
+                                        // Force navigation programmatically if button is clicked
+                                        // The Link wrapper handles the card click, but button stops propagation
+                                        window.location.href = `#/workout/${workout.id}`; // Fallback or use navigate hook if available
+                                    }}
                                     onSchedule={() => setWorkoutToSchedule(workout)}
                                 />
                             </Link>
