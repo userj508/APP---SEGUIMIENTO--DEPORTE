@@ -46,14 +46,50 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
 
             if (error) throw error;
 
-            // 2. Handle exercises (Optional MVP: Parsing text lines as exercises)
-            // For this quick MVP, we'll just create the workout container.
-            // If user entered text, we could try to create placeholder exercises?
-            // Let's keep it simple: Just create the workout shell first.
+            // 2. Handle Exercises (Simple Text Parser)
+            const lines = exercisesText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-            // If we have text, let's parse lines and try to add them?
-            // Actually, let's stick to the core requirement: Create the Workout. 
-            // We can add "Add Exercises" later.
+            if (lines.length > 0) {
+                // Determine exercise IDs (Find or Create)
+                const exercisePromises = lines.map(async (line, index) => {
+                    // Try to find existing
+                    const { data: existing } = await supabase
+                        .from('exercises')
+                        .select('id')
+                        .ilike('name', line)
+                        .maybeSingle();
+
+                    let exerciseId = existing?.id;
+
+                    if (!exerciseId) {
+                        // Create new exercise
+                        const { data: newExercise } = await supabase
+                            .from('exercises')
+                            .insert({ name: line, category: 'Other' })
+                            .select('id')
+                            .single();
+                        exerciseId = newExercise.id;
+                    }
+
+                    return {
+                        workout_id: workout.id,
+                        exercise_id: exerciseId,
+                        order_index: index,
+                        target_sets: 3, // Default
+                        target_reps: 10, // Default
+                        rest_seconds: 60 // Default
+                    };
+                });
+
+                const workoutExercises = await Promise.all(exercisePromises);
+
+                // Bulk Insert Link Table
+                const { error: linkError } = await supabase
+                    .from('workout_exercises')
+                    .insert(workoutExercises);
+
+                if (linkError) throw linkError;
+            }
 
             onWorkoutCreated(workout);
             onClose();
@@ -138,6 +174,17 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Exercises (One per line)</label>
+                        <textarea
+                            value={exercisesText}
+                            onChange={e => setExercisesText(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none h-32 resize-none text-sm font-mono"
+                            placeholder="Squats&#10;Bench Press&#10;Deadlift"
+                            required
+                        />
                     </div>
 
                     <div>
