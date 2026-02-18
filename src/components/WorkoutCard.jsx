@@ -75,6 +75,7 @@ const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedul
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         onSchedule && onSchedule();
                     }}
                     className="flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-semibold transition-colors border border-slate-800 hover:border-slate-600 hover:text-white"
@@ -85,6 +86,7 @@ const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedul
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         onStart && onStart();
                     }}
                     className="flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-slate-900 text-xs font-bold transition-colors border border-emerald-500/20 hover:border-emerald-500"

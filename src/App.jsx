@@ -28,7 +28,7 @@ function App() {
           <Route path="/workout" element={<ProtectedRoute><ActiveWorkout /></ProtectedRoute>} />
           <Route path="/workout/:workoutId" element={<ProtectedRoute><ActiveWorkout /></ProtectedRoute>} />
           <Route path="/plan" element={<ProtectedRoute><Layout><Plan /></Layout></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Layout><div className="p-10 text-center text-slate-500">User Profile (Coming Soon)</div></Layout></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
         </Routes>
       </Router>
     </AuthProvider>
