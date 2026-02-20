@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, SlidersHorizontal, Wand2, Loader2, Calendar } from 'lucide-react';
-import WeekCalendar from '../components/WeekCalendar';
+import WeeklyPlanner from '../components/WeeklyPlanner';
 import WorkoutCard from '../components/WorkoutCard';
 import Section from '../components/Section';
 import CreateWorkoutModal from '../components/CreateWorkoutModal';
@@ -63,7 +63,7 @@ const Plan = () => {
             </header>
 
             {/* Weekly Calendar Component */}
-            <WeekCalendar key={refreshTrigger} />
+            <WeeklyPlanner key={refreshTrigger} />
 
             {/* Core Actions */}
             <div className="grid grid-cols-2 gap-3 mb-10">

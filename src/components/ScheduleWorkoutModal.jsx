@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Loader2, Calendar, Check } from 'lucide-react';
+import { X, Loader2, Calendar, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -7,6 +7,7 @@ const ScheduleWorkoutModal = ({ workout, onClose, onScheduled }) => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedTime, setSelectedTime] = useState('18:00');
 
     // Generate next 7 days for quick selection
     const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -30,7 +31,9 @@ const ScheduleWorkoutModal = ({ workout, onClose, onScheduled }) => {
                     user_id: user.id,
                     workout_id: workout.id,
                     scheduled_date: selectedDate,
-                    is_completed: false
+                    scheduled_time: selectedTime,
+                    is_completed: false,
+                    is_rest_day: false
                 });
 
             if (error) throw error;
@@ -50,7 +53,7 @@ const ScheduleWorkoutModal = ({ workout, onClose, onScheduled }) => {
             <div className="bg-slate-950 border border-white/5 rounded-[24px] w-full max-w-[360px] p-6 relative animate-in fade-in zoom-in duration-200 shadow-2xl">
                 <button
                     onClick={onClose}
-                    className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-colors"
+                    className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-colors z-10"
                 >
                     <X size={16} />
                 </button>
@@ -67,6 +70,7 @@ const ScheduleWorkoutModal = ({ workout, onClose, onScheduled }) => {
 
                 <form onSubmit={handleSubmit} className="space-y-6 flex flex-col h-full">
                     <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3 block">Select Date</span>
                         <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2">
                             {weekDates.map((d) => {
                                 const isSelected = selectedDate === d.dateStr;
@@ -88,12 +92,26 @@ const ScheduleWorkoutModal = ({ workout, onClose, onScheduled }) => {
                         </div>
                     </div>
 
+                    <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3 block">Time</span>
+                        <div className="relative">
+                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                            <input
+                                type="time"
+                                value={selectedTime}
+                                onChange={(e) => setSelectedTime(e.target.value)}
+                                className="w-full bg-slate-900 border border-white/5 rounded-[16px] py-3.5 pl-11 pr-4 text-white text-sm font-semibold focus:outline-none focus:border-white/20 transition-colors"
+                                required
+                            />
+                        </div>
+                    </div>
+
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-slate-100 hover:bg-white text-slate-950 font-bold text-sm py-4 rounded-[16px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-4 shadow-xl"
+                        className="w-full bg-slate-100 hover:bg-white text-slate-950 font-bold text-sm py-4 rounded-[16px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xl"
                     >
-                        {loading ? <Loader2 className="animate-spin text-slate-950" size={18} /> : <span>Confirm Date</span>}
+                        {loading ? <Loader2 className="animate-spin text-slate-950" size={18} /> : <span>Confirm Schedule</span>}
                     </button>
                 </form>
             </div>
