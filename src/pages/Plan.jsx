@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, SlidersHorizontal, Wand2, Loader2 } from 'lucide-react';
+import { Plus, SlidersHorizontal, Wand2, Loader2, Calendar } from 'lucide-react';
 import WeekCalendar from '../components/WeekCalendar';
 import WorkoutCard from '../components/WorkoutCard';
 import Section from '../components/Section';
@@ -7,17 +7,17 @@ import CreateWorkoutModal from '../components/CreateWorkoutModal';
 import ScheduleWorkoutModal from '../components/ScheduleWorkoutModal';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Plan = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [workouts, setWorkouts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [workoutToSchedule, setWorkoutToSchedule] = useState(null);
-    const [refreshTrigger, setRefreshTrigger] = useState(0); // Hack to force refresh calendar
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    // Fetch Workouts
     useEffect(() => {
         if (!user) return;
 
@@ -26,7 +26,7 @@ const Plan = () => {
                 const { data, error } = await supabase
                     .from('workouts')
                     .select('*')
-                    .or(`user_id.eq.${user.id},user_id.is.null`) // Own + System workouts
+                    .or(`user_id.eq.${user.id},user_id.is.null`)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -47,74 +47,72 @@ const Plan = () => {
 
     const handleScheduleComplete = () => {
         setWorkoutToSchedule(null);
-        setRefreshTrigger(prev => prev + 1); // Refresh calendar
-        alert("Workout Scheduled!");
+        setRefreshTrigger(prev => prev + 1);
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white px-5 pt-10 pb-28 relative">
-            <header className="mb-6 flex justify-between items-end">
+        <div className="min-h-screen bg-slate-950 text-white px-5 pt-10 pb-28 font-sans selection:bg-emerald-500/30">
+            <header className="mb-10 flex justify-between items-end">
                 <div>
-                    <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Your Schedule</h2>
+                    <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Schedule</h2>
                     <h1 className="text-3xl font-bold tracking-tight text-white">Plan & Build</h1>
                 </div>
-                <button className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-colors">
+                <button className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 text-slate-300 flex items-center justify-center hover:bg-slate-800 transition-colors">
                     <SlidersHorizontal size={18} />
                 </button>
             </header>
 
-            {/* Weekly Calendar */}
+            {/* Weekly Calendar Component */}
             <WeekCalendar key={refreshTrigger} />
 
-            {/* AI Generation / Quick Add Actions */}
-            <div className="grid grid-cols-2 gap-3 mb-8">
-                <button className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition-transform">
-                    <Wand2 size={24} className="mb-2 opacity-90" />
-                    <span className="text-sm font-bold">Generate Week</span>
-                    <span className="text-[10px] opacity-75 mt-0.5">AI Powered</span>
+            {/* Core Actions */}
+            <div className="grid grid-cols-2 gap-3 mb-10">
+                <button className="flex flex-col items-start justify-center p-5 rounded-[20px] bg-slate-100 text-slate-950 active:scale-[0.98] transition-transform shadow-lg shadow-white/5">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center mb-3">
+                        <Wand2 size={16} />
+                    </div>
+                    <span className="text-sm font-bold">Generate Plan</span>
+                    <span className="text-[10px] font-medium text-slate-600 mt-0.5">AI Powered</span>
                 </button>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 transition-colors active:scale-95"
+                    className="flex flex-col items-start justify-center p-5 rounded-[20px] bg-slate-900 border border-white/5 text-slate-200 hover:bg-slate-800 transition-colors active:scale-[0.98]"
                 >
-                    <Plus size={24} className="mb-2 text-slate-500" />
+                    <div className="w-8 h-8 rounded-full bg-slate-950 border border-white/5 flex items-center justify-center mb-3 text-slate-400">
+                        <Plus size={16} />
+                    </div>
                     <span className="text-sm font-bold">Create Custom</span>
-                    <span className="text-[10px] text-slate-500 mt-0.5">Manual Builder</span>
+                    <span className="text-[10px] font-medium text-slate-500 mt-0.5">Manual Builder</span>
                 </button>
             </div>
 
             {/* Saved Workouts */}
-            <Section title="Saved Workouts" action={<button className="text-sm text-emerald-500 font-bold">View All</button>}>
+            <Section title="Library Workouts" action={<button className="text-xs text-slate-400 hover:text-white font-semibold transition-colors">View All</button>}>
                 {loading ? (
-                    <div className="flex justify-center py-10"><Loader2 className="animate-spin text-emerald-500" /></div>
+                    <div className="flex justify-center py-12"><Loader2 className="animate-spin tracking-tight text-emerald-500" /></div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {workouts.map(workout => (
-                            <Link to={`/workout/${workout.id}`} key={workout.id}>
-                                <WorkoutCard
-                                    title={workout.title}
-                                    duration={workout.duration_minutes}
-                                    type={workout.type}
-                                    level={workout.difficulty}
-                                    onStart={() => {
-                                        // Force navigation programmatically if button is clicked
-                                        // The Link wrapper handles the card click, but button stops propagation
-                                        window.location.href = `#/workout/${workout.id}`; // Fallback or use navigate hook if available
-                                    }}
-                                    onSchedule={() => setWorkoutToSchedule(workout)}
-                                />
-                            </Link>
+                            <WorkoutCard
+                                key={workout.id}
+                                title={workout.title}
+                                duration={workout.duration_minutes}
+                                type={workout.type}
+                                level={workout.difficulty}
+                                onStart={() => navigate(`/workout/${workout.id}`)}
+                                onSchedule={() => setWorkoutToSchedule(workout)}
+                            />
                         ))}
 
-                        {/* Add New Placeholder Card */}
+                        {/* Minimalist Add Placeholder */}
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="border-2 border-dashed border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[140px] hover:border-slate-700 hover:bg-slate-900/50 transition-all text-slate-600 hover:text-slate-400 group"
+                            className="rounded-[20px] flex flex-col items-center justify-center min-h-[160px] border border-dashed border-white/10 hover:border-slate-500 hover:bg-slate-900/50 transition-all text-slate-500 group"
                         >
-                            <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                <Plus size={24} />
+                            <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <Plus size={20} />
                             </div>
-                            <span className="text-xs font-bold uppercase tracking-wide">Save New Template</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">New Template</span>
                         </button>
                     </div>
                 )}

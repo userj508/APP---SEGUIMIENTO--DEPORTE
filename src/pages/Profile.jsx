@@ -28,7 +28,7 @@ const Profile = () => {
                     .maybeSingle();
                 setProfile(profileData);
 
-                // Fetch Stats (Mock calculation for consistency/streak for now, real total count)
+                // Fetch Stats
                 const { count, error } = await supabase
                     .from('workout_logs')
                     .select('*', { count: 'exact', head: true })
@@ -37,8 +37,8 @@ const Profile = () => {
 
                 setStats({
                     totalWorkouts: count || 0,
-                    streak: 3, // Mock for MVP
-                    activeMinutes: (count || 0) * 45 // Estimate
+                    streak: 3,
+                    activeMinutes: (count || 0) * 45
                 });
 
             } catch (error) {
@@ -61,88 +61,79 @@ const Profile = () => {
     };
 
     if (loading) {
-        return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500" /></div>;
+        return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="animate-spin text-slate-500" /></div>;
     }
 
     const initials = (profile?.full_name || user?.email || 'User').slice(0, 2).toUpperCase();
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white pb-24">
-            {/* Header */}
-            <div className="bg-gradient-to-b from-emerald-900/20 to-slate-950 pt-12 pb-8 px-6 text-center">
-                <div className="w-24 h-24 bg-slate-800 rounded-full mx-auto mb-4 flex items-center justify-center border-4 border-slate-900 shadow-xl">
-                    <span className="text-3xl font-bold text-slate-400">{initials}</span>
+        <div className="min-h-screen bg-slate-950 text-white pb-24 font-sans selection:bg-emerald-500/30">
+            {/* Minimal Profile Header */}
+            <div className="pt-16 pb-10 px-6 max-w-xs mx-auto text-center flex flex-col items-center">
+                <div className="w-24 h-24 bg-slate-900 rounded-full mb-5 flex items-center justify-center border-4 border-slate-950 ring-1 ring-white/5 shadow-2xl relative">
+                    <span className="text-2xl font-bold tracking-widest text-slate-300">{initials}</span>
+                    <div className="absolute bottom-0 right-0 w-6 h-6 bg-emerald-500 border-[3px] border-slate-950 rounded-full"></div>
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-1">{profile?.full_name || 'Member'}</h1>
-                <p className="text-sm text-slate-500 font-mono">{user?.email}</p>
-                <div className="flex items-center justify-center gap-2 mt-2">
-                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase rounded-md border border-emerald-500/20">Pro Member</span>
+                <h1 className="text-2xl font-bold text-white mb-1.5 tracking-tight">{profile?.full_name || 'Member'}</h1>
+                <p className="text-xs text-slate-400 font-medium mb-4">{user?.email}</p>
+                <div className="inline-flex items-center justify-center px-3 py-1 bg-slate-900 border border-white/5 rounded-full">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Basic Plan</span>
                 </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="px-5 mb-8">
+            <div className="px-5 mb-10">
                 <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-2 text-emerald-500">
-                            <Activity size={16} />
-                        </div>
-                        <div className="text-xl font-bold text-white mb-0.5">{stats.totalWorkouts}</div>
-                        <div className="text-[10px] uppercase font-bold text-slate-500">Workouts</div>
+                    <div className="bg-slate-900 border border-white/5 rounded-[20px] p-5 flex flex-col items-center">
+                        <div className="text-xl font-bold text-white mb-1 tracking-tight">{stats.totalWorkouts}</div>
+                        <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500">Workouts</div>
                     </div>
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-                        <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-2 text-orange-500">
-                            <Award size={16} />
-                        </div>
-                        <div className="text-xl font-bold text-white mb-0.5">{stats.streak}</div>
-                        <div className="text-[10px] uppercase font-bold text-slate-500">Day Streak</div>
+                    <div className="bg-slate-900 border border-white/5 rounded-[20px] p-5 flex flex-col items-center">
+                        <div className="text-xl font-bold text-white mb-1 tracking-tight">{stats.streak}</div>
+                        <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500">Streak</div>
                     </div>
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-2 text-blue-500">
-                            <Calendar size={16} />
-                        </div>
-                        <div className="text-xl font-bold text-white mb-0.5">{Math.round(stats.activeMinutes / 60)}h</div>
-                        <div className="text-[10px] uppercase font-bold text-slate-500">Active Time</div>
+                    <div className="bg-slate-900 border border-white/5 rounded-[20px] p-5 flex flex-col items-center">
+                        <div className="text-xl font-bold text-white mb-1 tracking-tight">{Math.round(stats.activeMinutes / 60)}h</div>
+                        <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500">Time</div>
                     </div>
                 </div>
             </div>
 
-            {/* Menu */}
-            <div className="px-5 space-y-3">
+            {/* Menu options list */}
+            <div className="px-5 space-y-2.5">
                 <SectionItem icon={User} label="Account Details" />
-                <SectionItem icon={Settings} label="App Settings" />
                 <SectionItem icon={Award} label="Achievements" />
+                <SectionItem icon={Settings} label="Preferences" />
 
                 <button
                     onClick={handleSignOut}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between group hover:border-slate-700 transition-all mt-6"
+                    className="w-full bg-slate-900 border border-white/5 rounded-[20px] p-4 flex items-center justify-between group hover:bg-rose-500/5 transition-all mt-8 group"
                 >
                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center group-hover:bg-rose-500/10 group-hover:text-rose-500 transition-colors text-slate-500">
-                            <LogOut size={20} />
+                        <div className="w-10 h-10 rounded-[14px] bg-slate-950 border border-white/5 flex items-center justify-center text-slate-400 group-hover:text-rose-400 transition-colors">
+                            <LogOut size={16} />
                         </div>
-                        <span className="font-bold text-slate-300 group-hover:text-white">Sign Out</span>
+                        <span className="text-sm font-semibold text-slate-300 group-hover:text-rose-400 transition-colors">Sign Out</span>
                     </div>
-                    <ChevronRight size={16} className="text-slate-600 group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>
 
             <div className="mt-12 text-center">
-                <p className="text-[10px] text-slate-700 font-mono">ANTIGRAVITY v0.9.2 (Beta)</p>
+                <p className="text-[10px] uppercase tracking-widest text-slate-600 font-bold">ANTIGRAVITY v1.0.0</p>
             </div>
         </div>
     );
 };
 
 const SectionItem = ({ icon: Icon, label }) => (
-    <button className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between group hover:border-slate-700 transition-all">
+    <button className="w-full bg-slate-900 border border-white/5 rounded-[20px] p-4 flex items-center justify-between group hover:bg-slate-800 transition-all">
         <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-white transition-colors">
-                <Icon size={20} />
+            <div className="w-10 h-10 rounded-[14px] bg-slate-950 border border-white/5 flex items-center justify-center text-slate-400 group-hover:text-white transition-colors shadow-inner">
+                <Icon size={16} />
             </div>
-            <span className="font-bold text-slate-300 group-hover:text-white">{label}</span>
+            <span className="text-sm font-semibold text-slate-300">{label}</span>
         </div>
-        <ChevronRight size={16} className="text-slate-600 group-hover:translate-x-1 transition-transform" />
+        <ChevronRight size={16} className="text-slate-600 group-hover:translate-x-1 group-hover:text-slate-400 transition-all" />
     </button>
 );
 
