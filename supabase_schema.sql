@@ -94,6 +94,12 @@ create policy "Users can insert own workouts" on workouts for insert with check 
 create policy "Users can view own logs" on workout_logs for select using ( auth.uid() = user_id );
 create policy "Users can insert own logs" on workout_logs for insert with check ( auth.uid() = user_id );
 
+-- Schedule: Private
+create policy "Users can view own schedule" on schedule for select using ( auth.uid() = user_id );
+create policy "Users can insert own schedule" on schedule for insert with check ( auth.uid() = user_id );
+create policy "Users can update own schedule" on schedule for update using ( auth.uid() = user_id );
+create policy "Users can delete own schedule" on schedule for delete using ( auth.uid() = user_id );
+
 -- TRIGGERS (Auto-create profile)
 create or replace function public.handle_new_user() 
 returns trigger as $$

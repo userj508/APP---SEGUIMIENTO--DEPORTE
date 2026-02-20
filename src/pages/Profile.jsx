@@ -11,7 +11,7 @@ const Profile = () => {
     const [stats, setStats] = useState({
         totalWorkouts: 0,
         streak: 0,
-        activeMinutes: 0
+        activeHours: 0
     });
     const [profile, setProfile] = useState(null);
 
@@ -28,18 +28,56 @@ const Profile = () => {
                     .maybeSingle();
                 setProfile(profileData);
 
-                // Fetch Stats
-                const { count, error } = await supabase
+                // Fetch Stats natively
+                const { data: logs, error } = await supabase
                     .from('workout_logs')
-                    .select('*', { count: 'exact', head: true })
+                    .select('started_at, completed_at')
                     .eq('user_id', user.id)
                     .eq('status', 'completed');
 
-                setStats({
-                    totalWorkouts: count || 0,
-                    streak: 3,
-                    activeMinutes: (count || 0) * 45
-                });
+                if (logs) {
+                    // Duration
+                    let totalMin = 0;
+                    logs.forEach(log => {
+                        if (log.started_at && log.completed_at) {
+                            const start = new Date(log.started_at);
+                            const end = new Date(log.completed_at);
+                            const diffMins = Math.floor((end - start) / (1000 * 60));
+                            if (diffMins > 0 && diffMins < 600) {
+                                totalMin += diffMins;
+                            }
+                        }
+                    });
+
+                    // Streak
+                    let streak = 0;
+                    let currentDate = new Date();
+                    currentDate.setHours(0, 0, 0, 0);
+
+                    const activeDates = new Set(logs.map(log => {
+                        const d = new Date(log.completed_at);
+                        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                    }));
+
+                    for (let i = 0; i < 365; i++) {
+                        const checkDate = new Date(currentDate);
+                        checkDate.setDate(currentDate.getDate() - i);
+                        const dateStr = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
+                        if (activeDates.has(dateStr)) {
+                            streak++;
+                        } else if (i === 0) {
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    setStats({
+                        totalWorkouts: logs.length,
+                        streak: streak,
+                        activeHours: Math.round(totalMin / 60)
+                    });
+                }
 
             } catch (error) {
                 console.error("Error fetching profile:", error);
@@ -93,7 +131,7 @@ const Profile = () => {
                         <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500">Streak</div>
                     </div>
                     <div className="bg-slate-900 border border-white/5 rounded-[20px] p-5 flex flex-col items-center">
-                        <div className="text-xl font-bold text-white mb-1 tracking-tight">{Math.round(stats.activeMinutes / 60)}h</div>
+                        <div className="text-xl font-bold text-white mb-1 tracking-tight">{stats.activeHours}h</div>
                         <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500">Time</div>
                     </div>
                 </div>
