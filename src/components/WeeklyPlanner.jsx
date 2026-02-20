@@ -204,51 +204,80 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
 
                         {/* Scheduled Items Overlay */}
                         <div className="absolute inset-0 pl-16 pt-[1px]">
-                            {selectedConfig.items.map((item) => {
-                                // Parse time, e.g. "18:00:00" or "18:00"
-                                const timeStr = item.scheduled_time || "12:00:00";
-                                const [hStr, mStr] = timeStr.split(':');
-                                const startH = parseInt(hStr, 10);
-                                const startM = parseInt(mStr, 10) || 0;
+                            {(() => {
+                                // First, prepare position data for all items
+                                const itemsWithPos = selectedConfig.items.map(item => {
+                                    const timeStr = item.scheduled_time || "12:00:00";
+                                    const [hStr, mStr] = timeStr.split(':');
+                                    const startH = parseInt(hStr, 10);
+                                    const startM = parseInt(mStr, 10) || 0;
+                                    const durationMinutes = item.workouts?.duration_minutes || 45;
 
-                                // If out of bounds, skip visual render
-                                if (startH < START_HOUR || startH > END_HOUR) return null;
+                                    const topOffset = ((startH - START_HOUR) * 80) + ((startM / 60) * 80);
+                                    const heightPx = (durationMinutes / 60) * 80;
 
-                                const topOffset = ((startH - START_HOUR) * 80) + ((startM / 60) * 80);
-                                const durationMinutes = item.workouts?.duration_minutes || 45;
-                                const heightPx = (durationMinutes / 60) * 80;
+                                    return {
+                                        ...item,
+                                        startH, startM, topOffset, heightPx,
+                                        startAbsolute: (startH * 60) + startM,
+                                        endAbsolute: (startH * 60) + startM + durationMinutes
+                                    };
+                                }).filter(item => item.startH >= START_HOUR && item.startH <= END_HOUR)
+                                    .sort((a, b) => a.startAbsolute - b.startAbsolute);
 
-                                return (
-                                    <div
-                                        key={item.id}
-                                        onClick={() => navigate(`/workout/${item.workouts?.id}`)}
-                                        className="absolute left-16 right-4 rounded-[16px] bg-emerald-500/10 border border-emerald-500/20 p-3 hover:bg-emerald-500/20 transition-all cursor-pointer group flex flex-col"
-                                        style={{
-                                            top: `${topOffset}px`,
-                                            height: `${heightPx}px`,
-                                            minHeight: '40px' // Ensure visibility even if duration is 0
-                                        }}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <h4 className="text-emerald-400 font-bold text-sm leading-tight group-hover:text-emerald-300 transition-colors">
-                                                {item.workouts?.title}
-                                            </h4>
-                                            <button
-                                                onClick={(e) => handleDeleteSchedule(item.id, e)}
-                                                className="text-emerald-500/50 hover:text-rose-400 transition-colors bg-black/20 rounded-full p-1"
-                                            >
-                                                <Trash2 size={12} />
-                                            </button>
-                                        </div>
-                                        {heightPx >= 60 && (
-                                            <div className="text-[10px] font-semibold text-emerald-500/70 flex items-center gap-1 mt-1">
-                                                <Clock size={10} />
-                                                {startH}:{startM === 0 ? '00' : startM} ({durationMinutes}m)
+                                // Simple overlapping logic: if items overlap, shift them horizontally
+                                const renderedItems = [];
+                                itemsWithPos.forEach((item, index) => {
+                                    // Check how many items BEFORE this one overlap with it
+                                    let overlapCount = 0;
+                                    for (let i = 0; i < index; i++) {
+                                        const prev = itemsWithPos[i];
+                                        if (item.startAbsolute < prev.endAbsolute) {
+                                            overlapCount++;
+                                        }
+                                    }
+
+                                    // Shift right based on overlap count (max 3 shifts to avoid falling off screen)
+                                    const shiftIndex = Math.min(overlapCount, 3);
+                                    const widthPercent = 100 - (shiftIndex * 15);
+                                    const leftOffset = 16 + (shiftIndex * 20); // 16px is the base left padding
+
+                                    renderedItems.push(
+                                        <div
+                                            key={item.id}
+                                            onClick={() => navigate(`/workout/${item.workouts?.id}`)}
+                                            className="absolute right-4 rounded-[16px] bg-emerald-500/10 border border-emerald-500/20 p-3 hover:bg-emerald-500/20 transition-all cursor-pointer group flex flex-col backdrop-blur-md shadow-lg"
+                                            style={{
+                                                top: `${item.topOffset}px`,
+                                                height: `${item.heightPx}px`,
+                                                minHeight: '40px',
+                                                left: `${leftOffset}px`,
+                                                zIndex: 10 + shiftIndex
+                                            }}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <h4 className="text-emerald-400 font-bold text-sm leading-tight group-hover:text-emerald-300 transition-colors truncate pr-2">
+                                                    {item.workouts?.title}
+                                                </h4>
+                                                <button
+                                                    onClick={(e) => handleDeleteSchedule(item.id, e)}
+                                                    className="text-emerald-500/50 hover:text-rose-400 transition-colors bg-black/20 rounded-full p-1 opacity-0 group-hover:opacity-100 shrink-0"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                                            {item.heightPx >= 60 && (
+                                                <div className="text-[10px] font-semibold text-emerald-500/70 flex items-center gap-1 mt-1">
+                                                    <Clock size={10} />
+                                                    {item.startH}:{item.startM === 0 ? '00' : item.startM.toString().padStart(2, '0')} ({item.workouts?.duration_minutes || 45}m)
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                });
+
+                                return renderedItems;
+                            })()}
                         </div>
 
                         {/* Interactive invisible grid for clicking empty times */}
