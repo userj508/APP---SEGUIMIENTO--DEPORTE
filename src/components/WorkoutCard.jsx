@@ -16,6 +16,15 @@ const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedul
         }
     };
 
+    const handleSchedule = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (onSchedule) {
+            onSchedule();
+        }
+    };
+
     return (
         <div
             onClick={onClick}
@@ -45,11 +54,7 @@ const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedul
 
             <div className="grid grid-cols-2 gap-2 mt-auto">
                 <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        onSchedule && onSchedule();
-                    }}
+                    onClick={handleSchedule}
                     className="flex items-center justify-center gap-2 py-3 rounded-[14px] bg-slate-950 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors border border-white/5"
                 >
                     <CalendarPlus size={14} />
