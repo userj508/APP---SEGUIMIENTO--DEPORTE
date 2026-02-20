@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Calendar, Activity, Zap, ChevronRight, Trophy, Flame, CheckCircle2 } from 'lucide-react';
+import { Play, Calendar, Activity, Zap, ChevronRight, Trophy, CheckCircle2, Moon, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Section from '../components/Section';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import CreateWorkoutModal from '../components/CreateWorkoutModal';
 
 const Home = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [headerName, setHeaderName] = useState('Athlete');
-    const [featuredWorkout, setFeaturedWorkout] = useState(null);
+
+    // Scheduled Workout State
+    const [scheduledWorkout, setScheduledWorkout] = useState(null);
+    const [scheduledExercises, setScheduledExercises] = useState([]);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -42,25 +48,23 @@ const Home = () => {
                     .maybeSingle();
 
                 if (schedule?.workouts) {
-                    setFeaturedWorkout({
-                        ...schedule.workouts,
-                        isScheduled: true
-                    });
-                } else {
-                    // 3. Fallback: Get a random "Recommended" workout
-                    const { data: workouts } = await supabase
-                        .from('workouts')
-                        .select('*')
-                        .limit(5);
+                    setScheduledWorkout(schedule.workouts);
 
-                    if (workouts && workouts.length > 0) {
-                        const random = workouts[Math.floor(Math.random() * workouts.length)];
-                        setFeaturedWorkout({
-                            ...random,
-                            isScheduled: false,
-                            reason: "Suggested for You"
-                        });
+                    // Fetch preview exercises for this workout
+                    const { data: exercises } = await supabase
+                        .from('workout_exercises')
+                        .select('exercises(name)')
+                        .eq('workout_id', schedule.workouts.id)
+                        .order('order_index')
+                        .limit(4); // Just grab first 4 for preview
+
+                    if (exercises) {
+                        setScheduledExercises(exercises.map(e => e.exercises.name));
                     }
+                } else {
+                    // Deliberately empty - no fallback
+                    setScheduledWorkout(null);
+                    setScheduledExercises([]);
                 }
             } catch (error) {
                 console.error("Error fetching home data:", error);
@@ -72,21 +76,14 @@ const Home = () => {
         fetchData();
     }, [user]);
 
-    // Fallback if DB is empty and no workout found
-    const defaultWorkout = {
-        id: 'mock-1',
-        title: "Intro Strength",
-        duration_minutes: 30,
-        type: "Strength",
-        reason: "Get Started",
-        isScheduled: false
+    const handleWorkoutCreated = (newWorkout) => {
+        // Automatically route to Plan to schedule the new workout, or we could auto-schedule it for today.
+        // For now, let's keep it simple and route to Plan.
+        navigate('/plan');
     };
 
-    const activeHero = featuredWorkout || defaultWorkout;
-    const isRecommendation = !activeHero.isScheduled;
-
     return (
-        <div className="min-h-screen bg-slate-950 text-white px-5 pt-10 pb-28 font-sans selection:bg-emerald-500/30">
+        <div className="min-h-screen bg-slate-950 text-white px-5 pt-10 pb-28 font-sans selection:bg-emerald-500/30 relative">
             {/* Header / Greeting */}
             <header className="mb-10 flex justify-between items-center">
                 <div>
@@ -100,53 +97,105 @@ const Home = () => {
                 </div>
             </header>
 
-            {/* HERO SECTION */}
+            {/* HERO SECTION - DYNAMIC */}
             <Section>
-                <div className="relative overflow-hidden rounded-[24px] bg-slate-900 border border-white/5 shadow-2xl p-6 transition-all">
-                    {/* Subtle aesthetic gradient */}
-                    <div className={clsx(
-                        "absolute top-0 right-0 w-full h-full opacity-[0.03] pointer-events-none bg-gradient-to-br",
-                        isRecommendation ? "from-purple-500 to-transparent" : "from-emerald-500 to-transparent"
-                    )} />
+                <div className={clsx(
+                    "relative overflow-hidden rounded-[24px] border shadow-2xl p-6 transition-all",
+                    scheduledWorkout
+                        ? "bg-slate-900 border-white/5"
+                        : "bg-slate-950 border-white/5 border-dashed" // Empty State Styling
+                )}>
+                    {scheduledWorkout && (
+                        <div className="absolute top-0 right-0 w-full h-full opacity-[0.03] pointer-events-none bg-gradient-to-br from-emerald-500 to-transparent" />
+                    )}
 
                     <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+
+                        {/* Header Chip */}
                         <div className="flex justify-between items-start">
                             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-slate-950/50 backdrop-blur-sm border border-white/5">
-                                {isRecommendation ? (
-                                    <><Flame size={12} className="text-slate-400" /><span className="text-slate-300">Recommended</span></>
-                                ) : (
+                                {scheduledWorkout ? (
                                     <><CheckCircle2 size={12} className="text-emerald-500" /><span className="text-slate-300">Scheduled Today</span></>
+                                ) : (
+                                    <><Moon size={12} className="text-slate-500" /><span className="text-slate-400">Rest Day</span></>
                                 )}
                             </div>
-                            <span className="text-slate-400 font-mono text-xs font-medium px-2 py-1">{activeHero.duration_minutes || activeHero.duration || 45} min</span>
+
+                            {scheduledWorkout && (
+                                <span className="text-slate-400 font-mono text-xs font-medium px-2 py-1">
+                                    {scheduledWorkout.duration_minutes || 45} min
+                                </span>
+                            )}
                         </div>
 
+                        {/* Title & Description / Preview */}
                         <div>
-                            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 leading-tight tracking-tight">{activeHero.title}</h2>
-                            <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[85%]">
-                                {isRecommendation
-                                    ? `Based on your recovery, we suggest a ${activeHero.reason?.toLowerCase() || 'quick session'}.`
-                                    : "Ready to hit your target? Let's get this done."}
-                            </p>
+                            {scheduledWorkout ? (
+                                <>
+                                    <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight tracking-tight">
+                                        {scheduledWorkout.title}
+                                    </h2>
+
+                                    {/* EXERCISE PREVIEW CHIPS */}
+                                    {scheduledExercises.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {scheduledExercises.map((ex, i) => (
+                                                <span key={i} className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                                                    {ex}
+                                                </span>
+                                            ))}
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-950 border border-white/5 px-2.5 py-1 rounded-md">
+                                                ...
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[85%]">
+                                            Ready to hit your target? Let's get this done.
+                                        </p>
+                                    )}
+                                </>
+                            ) : (
+                                // EMPTY STATE TEXT
+                                <>
+                                    <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 leading-tight tracking-tight">
+                                        No Session Planned
+                                    </h2>
+                                    <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-[90%]">
+                                        Enjoy your rest, pick a routine from your library, or build a new one.
+                                    </p>
+                                </>
+                            )}
                         </div>
 
-                        <div className="flex items-center gap-3 pt-2">
-                            <button
-                                onClick={() => navigate(`/workout/${activeHero.id}`)}
-                                className={clsx(
-                                    "flex-1 font-semibold text-sm py-4 px-6 rounded-2xl flex items-center justify-center transition-all transform active:scale-[0.98]",
-                                    isRecommendation
-                                        ? "bg-slate-100 text-slate-950 hover:bg-white"
-                                        : "bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
-                                )}>
-                                Start Workout
-                            </button>
-                            <button
-                                onClick={() => navigate('/plan')}
-                                className="bg-slate-950 hover:bg-slate-800 text-slate-300 p-4 rounded-2xl border border-white/5 transition-colors flex items-center justify-center">
-                                <Calendar size={20} />
-                            </button>
+                        {/* Actions */}
+                        <div className="pt-2">
+                            {scheduledWorkout ? (
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => navigate(`/workout/${scheduledWorkout.id}`)}
+                                        className="flex-1 font-semibold text-sm py-4 px-6 rounded-2xl flex items-center justify-center transition-all transform active:scale-[0.98] bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
+                                    >
+                                        Start Session
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col sm:flex-row items-center gap-3">
+                                    <button
+                                        onClick={() => navigate('/plan')}
+                                        className="w-full sm:flex-1 font-semibold text-sm py-4 px-6 rounded-2xl flex items-center justify-center transition-all transform active:scale-[0.98] bg-slate-100 text-slate-950 hover:bg-white"
+                                    >
+                                        Browse Library
+                                    </button>
+                                    <button
+                                        onClick={() => setShowCreateModal(true)}
+                                        className="w-full sm:w-auto bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 p-4 rounded-2xl transition-colors flex items-center justify-center font-semibold text-sm gap-2"
+                                    >
+                                        <Plus size={18} /> Create Template
+                                    </button>
+                                </div>
+                            )}
                         </div>
+
                     </div>
                 </div>
             </Section>
@@ -213,6 +262,13 @@ const Home = () => {
                     </div>
                 </div>
             </Section>
+
+            {showCreateModal && (
+                <CreateWorkoutModal
+                    onClose={() => setShowCreateModal(false)}
+                    onWorkoutCreated={handleWorkoutCreated}
+                />
+            )}
         </div>
     );
 };
