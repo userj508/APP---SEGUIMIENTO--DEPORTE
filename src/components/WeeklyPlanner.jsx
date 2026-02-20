@@ -190,12 +190,16 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
                         <p className="text-xs text-slate-400 max-w-[200px]">Take this time to recharge your muscles and mind.</p>
                     </div>
                 ) : (
-                    <div className="relative pl-14 min-h-[400px]">
-                        {/* Hour Grid Lines */}
-                        <div className="absolute inset-0 pl-14 flex flex-col pointer-events-none">
+                    <div className="relative pl-14 pb-10">
+                        {/* Grid Lines + Interactive Areas (Dictates timeline height) */}
+                        <div className="flex flex-col w-full z-0">
                             {hours.map(hour => (
-                                <div key={hour} className="h-20 border-t border-white/5 w-full relative">
-                                    <span className="absolute -left-12 -top-2.5 text-[10px] font-bold text-slate-500 w-10 text-right">
+                                <div
+                                    key={hour}
+                                    onClick={() => onScheduleRequest && onScheduleRequest(selectedDate, `${hour.toString().padStart(2, '0')}:00`)}
+                                    className="h-20 shrink-0 border-t border-white/5 w-full relative hover:bg-white/5 transition-colors cursor-crosshair"
+                                >
+                                    <span className="absolute -left-12 -top-2.5 text-[10px] font-bold text-slate-500 w-10 text-right pointer-events-none">
                                         {hour}:00
                                     </span>
                                 </div>
@@ -203,7 +207,7 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
                         </div>
 
                         {/* Scheduled Items Overlay */}
-                        <div className="absolute inset-0 pl-16 pt-[1px]">
+                        <div className="absolute top-0 bottom-10 left-14 right-0 pt-[1px] pointer-events-none">
                             {(() => {
                                 // First, prepare position data for all items
                                 const itemsWithPos = selectedConfig.items.map(item => {
@@ -246,7 +250,7 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
                                         <div
                                             key={item.id}
                                             onClick={() => navigate(`/workout/${item.workouts?.id}`)}
-                                            className="absolute right-4 rounded-[16px] bg-emerald-500/10 border border-emerald-500/20 p-3 hover:bg-emerald-500/20 transition-all cursor-pointer group flex flex-col backdrop-blur-md shadow-lg"
+                                            className="absolute right-4 rounded-[16px] bg-emerald-500/10 border border-emerald-500/20 p-3 hover:bg-emerald-500/20 transition-all cursor-pointer group flex flex-col backdrop-blur-md shadow-lg pointer-events-auto"
                                             style={{
                                                 top: `${item.topOffset}px`,
                                                 height: `${item.heightPx}px`,
@@ -278,18 +282,6 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
 
                                 return renderedItems;
                             })()}
-                        </div>
-
-                        {/* Interactive invisible grid for clicking empty times */}
-                        <div className="absolute inset-0 pl-14 flex flex-col z-0">
-                            {hours.map(hour => (
-                                <div
-                                    key={hour}
-                                    onClick={() => onScheduleRequest && onScheduleRequest(selectedDate, `${hour.toString().padStart(2, '0')}:00`)}
-                                    className="h-20 w-full hover:bg-white/5 transition-colors cursor-crosshair"
-                                >
-                                </div>
-                            ))}
                         </div>
                     </div>
                 )}
