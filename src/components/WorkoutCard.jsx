@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Clock, Dumbbell, Zap, Heart, Activity, MoreHorizontal, Play, CalendarPlus } from 'lucide-react';
 import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
 
-const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedule }) => {
+const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedule, onDelete }) => {
     const navigate = useNavigate();
+    const [showMenu, setShowMenu] = useState(false);
 
     const handleStart = (e) => {
         e.stopPropagation();
@@ -30,14 +31,43 @@ const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedul
             onClick={onClick}
             className="bg-slate-900 border border-white/5 rounded-[20px] p-5 hover:bg-slate-800/80 transition-all group flex flex-col cursor-pointer"
         >
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-4 relative">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-slate-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     {type || 'Strength'}
                 </div>
-                <button className="text-slate-500 hover:text-white p-1 rounded-full transition-colors">
-                    <MoreHorizontal size={18} />
-                </button>
+                {onDelete && (
+                    <div className="relative">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                            className="text-slate-500 hover:text-white p-1 rounded-full transition-colors"
+                        >
+                            <MoreHorizontal size={18} />
+                        </button>
+                        {showMenu && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }}></div>
+                                <div className="absolute right-0 top-full mt-1 w-32 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowMenu(false);
+                                            onDelete();
+                                        }}
+                                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-slate-700/50 transition-colors flex items-center gap-2"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+                {!onDelete && (
+                    <button className="text-slate-500 hover:text-white p-1 rounded-full transition-colors cursor-default">
+                        <MoreHorizontal size={18} />
+                    </button>
+                )}
             </div>
 
             <div className="mb-6 flex-1">

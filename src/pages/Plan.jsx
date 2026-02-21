@@ -64,6 +64,25 @@ const Plan = () => {
         setRefreshTrigger(prev => prev + 1);
     };
 
+    const handleDeleteWorkout = async (workoutId) => {
+        if (!window.confirm("Are you sure you want to delete this workout? This action cannot be undone.")) return;
+
+        try {
+            const { error } = await supabase
+                .from('workouts')
+                .delete()
+                .eq('id', workoutId)
+                .eq('user_id', user.id); // Ensure only user's workouts can be deleted
+
+            if (error) throw error;
+
+            setWorkouts(workouts.filter(w => w.id !== workoutId));
+        } catch (error) {
+            console.error("Error deleting workout:", error);
+            alert("Failed to delete workout. Please try again.");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-950 text-white px-5 pt-10 pb-28 font-sans selection:bg-emerald-500/30">
             <header className="mb-10 flex justify-between items-end">
@@ -115,6 +134,7 @@ const Plan = () => {
                                 level={workout.difficulty}
                                 onStart={() => navigate(`/workout/${workout.id}`)}
                                 onSchedule={() => setWorkoutToSchedule(workout)}
+                                onDelete={workout.user_id === user?.id ? () => handleDeleteWorkout(workout.id) : undefined}
                             />
                         ))}
 
