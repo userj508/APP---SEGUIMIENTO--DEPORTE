@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Flame, Clock, Activity, Calendar, Loader2 } from 'lucide-react';
+import { Trophy, Flame, Clock, Activity, Calendar, Loader2, TrendingUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import ExerciseProgressModal from '../components/ExerciseProgressModal';
 
 const Dashboard = () => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [selectedExercise, setSelectedExercise] = useState(null);
     const [stats, setStats] = useState({
         totalSessions: 0,
         totalDurationMinutes: 0,
         currentStreak: 0,
         weeklyData: [],
-        recentMilestones: []
+        recentMilestones: [],
+        performedExercises: []
     });
 
     useEffect(() => {
@@ -110,12 +113,44 @@ const Dashboard = () => {
                     };
                 });
 
+                // 7. Fetch all performed exercises for progress tracking
+                const { data: exerciseLogs, error: exerciseError } = await supabase
+                    .from('exercise_logs')
+                    .select(`
+                        exercise_id,
+                        exercises ( name, category ),
+                        workout_logs!inner ( user_id )
+                    `)
+                    .eq('is_completed', true)
+                    .eq('workout_logs.user_id', user.id);
+
+                if (exerciseError) console.error("Error fetching exercise logs:", exerciseError);
+
+                const uniqueExercisesMap = new Map();
+                if (exerciseLogs) {
+                    exerciseLogs.forEach(log => {
+                        if (!uniqueExercisesMap.has(log.exercise_id) && log.exercises) {
+                            uniqueExercisesMap.set(log.exercise_id, {
+                                id: log.exercise_id,
+                                name: log.exercises.name,
+                                category: log.exercises.category || 'Exercise',
+                                logCount: 1
+                            });
+                        } else if (log.exercises) {
+                            uniqueExercisesMap.get(log.exercise_id).logCount++;
+                        }
+                    });
+                }
+                const performedExercises = Array.from(uniqueExercisesMap.values()).sort((a, b) => b.logCount - a.logCount);
+
+
                 setStats({
                     totalSessions,
                     totalDurationMinutes: totalMin,
                     currentStreak: streak,
                     weeklyData: weekDays,
-                    recentMilestones: milestones
+                    recentMilestones: milestones,
+                    performedExercises
                 });
 
             } catch (err) {
@@ -234,6 +269,50 @@ const Dashboard = () => {
                     </div>
                 )}
             </section>
+
+            {/* Exercise Progress Section */}
+            <section className="mt-10">
+                <div className="flex justify-between items-center mb-5">
+                    <h2 className="text-lg font-bold">Exercise Progress</h2>
+                    <span className="text-xs font-semibold text-emerald-500">
+                        {stats.performedExercises.length} Total
+                    </span>
+                </div>
+
+                {stats.performedExercises.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                        {stats.performedExercises.map((exercise) => (
+                            <div
+                                key={exercise.id}
+                                onClick={() => setSelectedExercise(exercise)}
+                                className="bg-slate-900 p-4 rounded-[20px] border border-white/5 flex flex-col justify-between min-h-[110px] cursor-pointer hover:bg-slate-800 transition-colors group"
+                            >
+                                <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">{exercise.category}</span>
+                                <div className="mt-auto">
+                                    <h3 className="text-sm font-bold text-white mb-1.5 leading-tight group-hover:text-emerald-400 transition-colors">{exercise.name}</h3>
+                                    <div className="flex items-center text-[10px] font-semibold text-slate-500">
+                                        <TrendingUp size={10} className="mr-1" />
+                                        {exercise.logCount} Sets Logged
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-12 px-6 bg-slate-900 border border-white/5 border-dashed rounded-[24px]">
+                        <Activity size={24} className="mx-auto text-slate-600 mb-3" />
+                        <p className="text-sm font-medium text-slate-400">No exercises tracked yet.</p>
+                        <p className="text-xs text-slate-500 mt-1">Complete workouts to see progress charts.</p>
+                    </div>
+                )}
+            </section>
+
+            {selectedExercise && (
+                <ExerciseProgressModal
+                    exercise={selectedExercise}
+                    onClose={() => setSelectedExercise(null)}
+                />
+            )}
         </div>
     );
 };

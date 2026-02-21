@@ -8,6 +8,7 @@ const ScheduleWorkoutModal = ({ workout, onClose, onScheduled }) => {
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedTime, setSelectedTime] = useState('18:00');
+    const [recurrenceWeeks, setRecurrenceWeeks] = useState(1);
 
     // Generate next 7 days for quick selection
     const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -25,16 +26,26 @@ const ScheduleWorkoutModal = ({ workout, onClose, onScheduled }) => {
         setLoading(true);
 
         try {
-            const { error } = await supabase
-                .from('schedule')
-                .insert({
+            const schedulesToInsert = [];
+            const baseDate = new Date(selectedDate);
+
+            for (let i = 0; i < recurrenceWeeks; i++) {
+                const scheduleDate = new Date(baseDate);
+                scheduleDate.setDate(baseDate.getDate() + (i * 7));
+
+                schedulesToInsert.push({
                     user_id: user.id,
                     workout_id: workout.id,
-                    scheduled_date: selectedDate,
+                    scheduled_date: scheduleDate.toISOString().split('T')[0],
                     scheduled_time: selectedTime,
                     is_completed: false,
                     is_rest_day: false
                 });
+            }
+
+            const { error } = await supabase
+                .from('schedule')
+                .insert(schedulesToInsert);
 
             if (error) throw error;
 
@@ -104,6 +115,23 @@ const ScheduleWorkoutModal = ({ workout, onClose, onScheduled }) => {
                                 required
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3 block">Recurrence</span>
+                        <select
+                            value={recurrenceWeeks}
+                            onChange={(e) => setRecurrenceWeeks(parseInt(e.target.value))}
+                            className="w-full bg-slate-900 border border-white/5 rounded-[16px] py-3.5 px-4 text-white text-sm font-semibold focus:outline-none focus:border-white/20 transition-colors appearance-none"
+                            style={{ backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 16px top 50%', backgroundSize: '12px auto' }}
+                        >
+                            <option value={1}>Only once</option>
+                            <option value={2}>Every week for 2 weeks</option>
+                            <option value={3}>Every week for 3 weeks</option>
+                            <option value={4}>Every week for 4 weeks</option>
+                            <option value={8}>Every week for 8 weeks</option>
+                            <option value={12}>Every week for 12 weeks</option>
+                        </select>
                     </div>
 
                     <button
