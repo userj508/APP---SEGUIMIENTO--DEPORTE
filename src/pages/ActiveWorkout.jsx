@@ -78,6 +78,33 @@ const ActiveWorkout = () => {
                     }))
                 }));
 
+                // Fetch last used weights for these exercises to use as recommended
+                const exerciseIds = formattedExercises.map(e => e.id);
+                if (exerciseIds.length > 0) {
+                    const { data: lastLogs } = await supabase
+                        .from('exercise_logs')
+                        .select('exercise_id, weight_kg, created_at, workout_logs!inner(user_id)')
+                        .in('exercise_id', exerciseIds)
+                        .eq('workout_logs.user_id', user.id)
+                        .eq('is_completed', true)
+                        .order('created_at', { ascending: false });
+
+                    if (lastLogs && lastLogs.length > 0) {
+                        const lastWeights = {};
+                        lastLogs.forEach(log => {
+                            if (!lastWeights[log.exercise_id]) {
+                                lastWeights[log.exercise_id] = log.weight_kg;
+                            }
+                        });
+
+                        formattedExercises.forEach(ex => {
+                            if (lastWeights[ex.id]) {
+                                ex.sets.forEach(s => s.weight = lastWeights[ex.id]);
+                            }
+                        });
+                    }
+                }
+
                 setExercises(formattedExercises);
                 if (formattedExercises.length > 0) {
                     setRestTime(formattedExercises[0].restSeconds);
@@ -122,17 +149,45 @@ const ActiveWorkout = () => {
     const activeFinishWorkout = async () => {
         setLoading(true);
         try {
-            const { error: logError } = await supabase
+            const { data: logData, error: logError } = await supabase
                 .from('workout_logs')
                 .insert({
                     user_id: user.id,
-                    workout_id: workoutId,
+                    workout_id: workoutId !== 'mock-1' ? workoutId : null,
                     status: 'completed',
                     started_at: new Date(Date.now() - elapsed * 1000).toISOString(),
                     completed_at: new Date().toISOString()
-                });
+                })
+                .select()
+                .single();
 
             if (logError) throw logError;
+
+            // Insert exercise logs
+            if (workoutId !== 'mock-1') {
+                const exerciseLogs = [];
+                exercises.forEach(ex => {
+                    ex.sets.forEach((set, index) => {
+                        if (set.completed) {
+                            exerciseLogs.push({
+                                workout_log_id: logData.id,
+                                exercise_id: ex.id,
+                                set_number: index + 1,
+                                reps_completed: set.reps,
+                                weight_kg: set.weight,
+                                is_completed: true
+                            });
+                        }
+                    });
+                });
+
+                if (exerciseLogs.length > 0) {
+                    const { error: exLogError } = await supabase
+                        .from('exercise_logs')
+                        .insert(exerciseLogs);
+                    if (exLogError) console.error("Error saving exercise logs:", exLogError);
+                }
+            }
 
             confetti({
                 particleCount: 120,
@@ -186,6 +241,16 @@ const ActiveWorkout = () => {
         }
     };
 
+    const handleSetUpdate = (field, value) => {
+        const newExercises = [...exercises];
+        const currentEx = newExercises[activeExerciseIndex];
+        const currentSetIndex = currentEx.sets.findIndex(s => !s.completed);
+        if (currentSetIndex !== -1) {
+            currentEx.sets[currentSetIndex][field] = value;
+            setExercises(newExercises);
+        }
+    };
+
     const handleAdjustTime = (amount) => {
         setRestTime(prev => Math.max(0, prev + amount));
     };
@@ -233,7 +298,38 @@ const ActiveWorkout = () => {
                     <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight mb-3">
                         {currentExercise.name}
                     </h1>
-                    <p className="text-slate-400 text-sm font-semibold">{currentSetData.weight > 0 ? `${currentSetData.weight}kg • ` : ''}Target: {currentExercise.targetReps} reps</p>
+
+                    {!isExerciseComplete && !isResting && (
+                        <div className="flex items-center justify-center gap-4 mt-2">
+                            <div className="flex flex-col items-center">
+                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Weight (kg)</span>
+                                <div className="flex items-center gap-2 bg-slate-900 border border-white/10 rounded-xl px-3 py-2">
+                                    <button onClick={() => handleSetUpdate('weight', Math.max(0, (currentSetData?.weight || 0) - 2.5))} className="text-slate-400 hover:text-white">-</button>
+                                    <input
+                                        type="number"
+                                        className="w-12 bg-transparent text-center font-bold text-lg text-white outline-none"
+                                        value={currentSetData?.weight || ''}
+                                        onChange={(e) => handleSetUpdate('weight', Number(e.target.value))}
+                                        placeholder="0"
+                                    />
+                                    <button onClick={() => handleSetUpdate('weight', (currentSetData?.weight || 0) + 2.5)} className="text-slate-400 hover:text-white">+</button>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Reps</span>
+                                <div className="flex items-center gap-2 bg-slate-900 border border-white/10 rounded-xl px-3 py-2">
+                                    <button onClick={() => handleSetUpdate('reps', Math.max(0, (currentSetData?.reps || 0) - 1))} className="text-slate-400 hover:text-white">-</button>
+                                    <input
+                                        type="number"
+                                        className="w-12 bg-transparent text-center font-bold text-lg text-white outline-none"
+                                        value={currentSetData?.reps || ''}
+                                        onChange={(e) => handleSetUpdate('reps', Number(e.target.value))}
+                                    />
+                                    <button onClick={() => handleSetUpdate('reps', (currentSetData?.reps || 0) + 1)} className="text-slate-400 hover:text-white">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* 2. Central Interactive Area */}

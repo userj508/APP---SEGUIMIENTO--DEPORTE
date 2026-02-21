@@ -12,9 +12,10 @@ const Home = () => {
     const navigate = useNavigate();
     const [headerName, setHeaderName] = useState('Athlete');
 
-    // Scheduled Workout State
     const [scheduledWorkout, setScheduledWorkout] = useState(null);
     const [scheduledExercises, setScheduledExercises] = useState([]);
+    const [weekSchedule, setWeekSchedule] = useState([]);
+    const [weekDates, setWeekDates] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     const [loading, setLoading] = useState(true);
@@ -66,6 +67,32 @@ const Home = () => {
                     setScheduledWorkout(null);
                     setScheduledExercises([]);
                 }
+
+                // 3. Fetch Weekly Schedule
+                const startOfWeek = new Date();
+                const day = startOfWeek.getDay() || 7;
+                if (day !== 1) startOfWeek.setHours(-24 * (day - 1));
+                else startOfWeek.setHours(0, 0, 0, 0);
+
+                const dates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(startOfWeek);
+                    d.setDate(startOfWeek.getDate() + i);
+                    dates.push(d);
+                }
+                const startDateStr = dates[0].toISOString().split('T')[0];
+                const endDateStr = dates[6].toISOString().split('T')[0];
+
+                const { data: weekData } = await supabase
+                    .from('schedule')
+                    .select('*, workouts(*)')
+                    .eq('user_id', user.id)
+                    .gte('scheduled_date', startDateStr)
+                    .lte('scheduled_date', endDateStr);
+
+                setWeekSchedule(weekData || []);
+                setWeekDates(dates);
+
             } catch (error) {
                 console.error("Error fetching home data:", error);
             } finally {
@@ -197,6 +224,45 @@ const Home = () => {
                         </div>
 
                     </div>
+                </div>
+            </Section>
+
+            {/* WEEKLY SUMMARY */}
+            <Section title="This Week's Plan" action={<Link to="/plan" className="text-xs text-slate-400 hover:text-white font-semibold flex items-center">Full Plan <ChevronRight size={14} className="ml-1" /></Link>}>
+                <div className="flex justify-between items-center gap-2 overflow-x-auto scrollbar-hide w-full max-w-full pb-2">
+                    {weekDates.map((d, i) => {
+                        const dateStr = d.toISOString().split('T')[0];
+                        const isToday = dateStr === new Date().toISOString().split('T')[0];
+                        const daySchedule = weekSchedule.filter(s => s.scheduled_date === dateStr);
+                        const hasWorkouts = daySchedule.some(s => !s.is_rest_day);
+                        const isRest = daySchedule.some(s => s.is_rest_day);
+
+                        return (
+                            <Link
+                                key={i}
+                                to="/plan"
+                                className={clsx(
+                                    "flex flex-col items-center justify-center flex-1 min-w-[48px] h-[80px] rounded-[20px] border transition-all relative overflow-hidden",
+                                    isToday
+                                        ? "bg-slate-800 border-slate-500 text-white"
+                                        : "bg-slate-900 border-white/5 text-slate-500 hover:bg-slate-800"
+                                )}
+                            >
+                                <span className={clsx("text-[10px] font-bold uppercase mb-1 tracking-wider", isToday ? "text-slate-300" : "text-slate-500")}>
+                                    {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                                </span>
+                                <span className={clsx("text-lg font-bold", isToday ? "text-white" : "text-slate-300")}>
+                                    {d.getDate()}
+                                </span>
+
+                                {/* Status Indicators */}
+                                <div className="mt-1 h-1 flex justify-center gap-1 w-full relative">
+                                    {isRest && <div className="w-1.5 h-1.5 rounded-full bg-orange-500/50"></div>}
+                                    {!isRest && hasWorkouts && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>}
+                                </div>
+                            </Link>
+                        );
+                    })}
                 </div>
             </Section>
 
