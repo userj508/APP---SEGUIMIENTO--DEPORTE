@@ -19,6 +19,8 @@ const Plan = () => {
     const [workoutToSchedule, setWorkoutToSchedule] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+    const [workoutToDelete, setWorkoutToDelete] = useState(null);
+
     // Exercise Library State
     const [exercises, setExercises] = useState([]);
     const [selectedExerciseForDefaults, setSelectedExerciseForDefaults] = useState(null);
@@ -64,22 +66,24 @@ const Plan = () => {
         setRefreshTrigger(prev => prev + 1);
     };
 
-    const handleDeleteWorkout = async (workoutId) => {
-        if (!window.confirm("Are you sure you want to delete this workout? This action cannot be undone.")) return;
+    const handleDeleteWorkout = async () => {
+        if (!workoutToDelete) return;
 
         try {
             const { error } = await supabase
                 .from('workouts')
                 .delete()
-                .eq('id', workoutId)
-                .eq('user_id', user.id); // Ensure only user's workouts can be deleted
+                .eq('id', workoutToDelete.id)
+                .eq('user_id', user.id);
 
             if (error) throw error;
 
-            setWorkouts(workouts.filter(w => w.id !== workoutId));
+            setWorkouts(workouts.filter(w => w.id !== workoutToDelete.id));
+            setWorkoutToDelete(null);
         } catch (error) {
             console.error("Error deleting workout:", error);
             alert("Failed to delete workout. Please try again.");
+            setWorkoutToDelete(null);
         }
     };
 
@@ -134,7 +138,7 @@ const Plan = () => {
                                 level={workout.difficulty}
                                 onStart={() => navigate(`/workout/${workout.id}`)}
                                 onSchedule={() => setWorkoutToSchedule(workout)}
-                                onDelete={workout.user_id === user?.id ? () => handleDeleteWorkout(workout.id) : undefined}
+                                onDelete={workout.user_id === user?.id ? () => setWorkoutToDelete(workout) : undefined}
                             />
                         ))}
 
