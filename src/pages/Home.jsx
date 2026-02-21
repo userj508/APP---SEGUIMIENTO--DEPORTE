@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import CreateWorkoutModal from '../components/CreateWorkoutModal';
+import DayScheduleModal from '../components/DayScheduleModal';
 
 const Home = () => {
     const { user } = useAuth();
@@ -17,6 +18,7 @@ const Home = () => {
     const [weekSchedule, setWeekSchedule] = useState([]);
     const [weekDates, setWeekDates] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [selectedDaySchedule, setSelectedDaySchedule] = useState(null);
 
     const [loading, setLoading] = useState(true);
 
@@ -238,29 +240,45 @@ const Home = () => {
                         const isRest = daySchedule.some(s => s.is_rest_day);
 
                         return (
-                            <Link
+                            <div
                                 key={i}
-                                to="/plan"
+                                onClick={() => setSelectedDaySchedule({ date: d, items: daySchedule })}
                                 className={clsx(
-                                    "flex flex-col items-center justify-center flex-1 min-w-[48px] h-[80px] rounded-[20px] border transition-all relative overflow-hidden",
+                                    "flex flex-col flex-1 min-w-[120px] rounded-[20px] border transition-all relative overflow-hidden p-3 cursor-pointer group hover:scale-[1.02]",
                                     isToday
                                         ? "bg-slate-800 border-slate-500 text-white"
                                         : "bg-slate-900 border-white/5 text-slate-500 hover:bg-slate-800"
                                 )}
                             >
-                                <span className={clsx("text-[10px] font-bold uppercase mb-1 tracking-wider", isToday ? "text-slate-300" : "text-slate-500")}>
-                                    {d.toLocaleDateString('en-US', { weekday: 'short' })}
-                                </span>
-                                <span className={clsx("text-lg font-bold", isToday ? "text-white" : "text-slate-300")}>
-                                    {d.getDate()}
-                                </span>
-
-                                {/* Status Indicators */}
-                                <div className="mt-1 h-1 flex justify-center gap-1 w-full relative">
-                                    {isRest && <div className="w-1.5 h-1.5 rounded-full bg-orange-500/50"></div>}
-                                    {!isRest && hasWorkouts && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>}
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className={clsx("text-[10px] font-bold uppercase tracking-wider", isToday ? "text-slate-300" : "text-slate-500")}>
+                                        {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                                    </span>
+                                    <span className={clsx("text-sm font-bold", isToday ? "text-white" : "text-slate-300")}>
+                                        {d.getDate()}
+                                    </span>
                                 </div>
-                            </Link>
+
+                                <div className="flex-1 flex flex-col justify-end">
+                                    {daySchedule.length === 0 ? (
+                                        <span className="text-[10px] text-slate-600 font-semibold mb-1 truncate block">— Rest —</span>
+                                    ) : (
+                                        <>
+                                            {daySchedule.slice(0, 2).map((s, idx) => (
+                                                <div key={idx} className="flex items-center gap-1.5 mb-1 truncate w-full">
+                                                    <div className={clsx("w-1.5 h-1.5 rounded-full shrink-0", s.is_rest_day ? "bg-orange-500" : "bg-emerald-500")} />
+                                                    <span className={clsx("text-[10px] font-semibold truncate", isToday ? "text-slate-200" : "text-slate-400 group-hover:text-slate-300")}>
+                                                        {s.is_rest_day ? 'Rest Day' : s.workouts?.title || 'Workout'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {daySchedule.length > 2 && (
+                                                <span className="text-[10px] text-slate-500 font-medium block mt-0.5">+{daySchedule.length - 2} more</span>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
                         );
                     })}
                 </div>
@@ -333,6 +351,14 @@ const Home = () => {
                 <CreateWorkoutModal
                     onClose={() => setShowCreateModal(false)}
                     onWorkoutCreated={handleWorkoutCreated}
+                />
+            )}
+
+            {selectedDaySchedule && (
+                <DayScheduleModal
+                    date={selectedDaySchedule.date}
+                    scheduleItems={selectedDaySchedule.items}
+                    onClose={() => setSelectedDaySchedule(null)}
                 />
             )}
         </div>

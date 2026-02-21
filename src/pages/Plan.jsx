@@ -4,7 +4,9 @@ import WeeklyPlanner from '../components/WeeklyPlanner';
 import WorkoutCard from '../components/WorkoutCard';
 import Section from '../components/Section';
 import CreateWorkoutModal from '../components/CreateWorkoutModal';
+import CreateWorkoutModal from '../components/CreateWorkoutModal';
 import ScheduleWorkoutModal from '../components/ScheduleWorkoutModal';
+import ExerciseDefaultsModal from '../components/ExerciseDefaultsModal';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -18,19 +20,32 @@ const Plan = () => {
     const [workoutToSchedule, setWorkoutToSchedule] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+    // Exercise Library State
+    const [exercises, setExercises] = useState([]);
+    const [selectedExerciseForDefaults, setSelectedExerciseForDefaults] = useState(null);
+
     useEffect(() => {
         if (!user) return;
 
         const fetchWorkouts = async () => {
             try {
-                const { data, error } = await supabase
+                const { data: workoutsData, error: workoutsError } = await supabase
                     .from('workouts')
                     .select('*')
                     .or(`user_id.eq.${user.id},user_id.is.null`)
                     .order('created_at', { ascending: false });
 
-                if (error) throw error;
-                setWorkouts(data || []);
+                if (workoutsError) throw workoutsError;
+                setWorkouts(workoutsData || []);
+
+                const { data: exercisesData, error: exercisesError } = await supabase
+                    .from('exercises')
+                    .select('*')
+                    .order('name');
+
+                if (exercisesError) throw exercisesError;
+                setExercises(exercisesData || []);
+
             } catch (error) {
                 console.error("Error fetching workouts:", error);
             } finally {
@@ -118,6 +133,33 @@ const Plan = () => {
                 )}
             </Section>
 
+            {/* Exercise Library */}
+            <Section title="Exercise Configuration" action={<span className="text-xs text-slate-400 font-semibold">{exercises.length} Exercises</span>}>
+                {loading ? (
+                    <div className="flex justify-center py-6"><Loader2 className="animate-spin tracking-tight text-emerald-500" /></div>
+                ) : (
+                    <div className="bg-slate-900 border border-white/5 rounded-[24px] overflow-hidden">
+                        <div className="max-h-[300px] overflow-y-auto scrollbar-hide divide-y divide-white/5">
+                            {exercises.map(ex => (
+                                <div
+                                    key={ex.id}
+                                    onClick={() => setSelectedExerciseForDefaults(ex)}
+                                    className="flex items-center justify-between p-4 hover:bg-slate-800 transition-colors cursor-pointer group"
+                                >
+                                    <div>
+                                        <h4 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">{ex.name}</h4>
+                                        <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{ex.category}</span>
+                                    </div>
+                                    <button className="text-xs font-bold text-slate-400 bg-slate-950 px-3 py-1.5 rounded-lg border border-white/5 group-hover:text-white group-hover:border-slate-500 transition-colors">
+                                        Configure
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </Section>
+
             {showCreateModal && (
                 <CreateWorkoutModal
                     onClose={() => setShowCreateModal(false)}
@@ -130,6 +172,13 @@ const Plan = () => {
                     workout={workoutToSchedule}
                     onClose={() => setWorkoutToSchedule(null)}
                     onScheduled={handleScheduleComplete}
+                />
+            )}
+
+            {selectedExerciseForDefaults && (
+                <ExerciseDefaultsModal
+                    exercise={selectedExerciseForDefaults}
+                    onClose={() => setSelectedExerciseForDefaults(null)}
                 />
             )}
         </div>

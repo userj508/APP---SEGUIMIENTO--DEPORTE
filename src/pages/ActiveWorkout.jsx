@@ -78,9 +78,23 @@ const ActiveWorkout = () => {
                     }))
                 }));
 
-                // Fetch last used weights for these exercises to use as recommended
+                // Fetch configured defaults first
                 const exerciseIds = formattedExercises.map(e => e.id);
                 if (exerciseIds.length > 0) {
+                    const { data: defaultsData } = await supabase
+                        .from('user_exercise_defaults')
+                        .select('exercise_id, default_weight_kg, default_reps')
+                        .eq('user_id', user.id)
+                        .in('exercise_id', exerciseIds);
+
+                    const userDefaults = {};
+                    if (defaultsData) {
+                        defaultsData.forEach(d => {
+                            userDefaults[d.exercise_id] = { weight: d.default_weight_kg, reps: d.default_reps };
+                        });
+                    }
+
+                    // Fetch last used weights as fallback
                     const { data: lastLogs } = await supabase
                         .from('exercise_logs')
                         .select('exercise_id, weight_kg, created_at, workout_logs!inner(user_id)')
@@ -89,20 +103,29 @@ const ActiveWorkout = () => {
                         .eq('is_completed', true)
                         .order('created_at', { ascending: false });
 
+                    const lastWeights = {};
                     if (lastLogs && lastLogs.length > 0) {
-                        const lastWeights = {};
                         lastLogs.forEach(log => {
                             if (!lastWeights[log.exercise_id]) {
                                 lastWeights[log.exercise_id] = log.weight_kg;
                             }
                         });
+                    }
 
-                        formattedExercises.forEach(ex => {
-                            if (lastWeights[ex.id]) {
-                                ex.sets.forEach(s => s.weight = lastWeights[ex.id]);
+                    // Apply to exercises
+                    formattedExercises.forEach(ex => {
+                        ex.sets.forEach(s => {
+                            if (userDefaults[ex.id]?.weight !== undefined && userDefaults[ex.id]?.weight !== null) {
+                                s.weight = userDefaults[ex.id].weight;
+                            } else if (lastWeights[ex.id]) {
+                                s.weight = lastWeights[ex.id];
+                            }
+
+                            if (userDefaults[ex.id]?.reps !== undefined && userDefaults[ex.id]?.reps !== null) {
+                                s.reps = userDefaults[ex.id].reps;
                             }
                         });
-                    }
+                    });
                 }
 
                 setExercises(formattedExercises);
