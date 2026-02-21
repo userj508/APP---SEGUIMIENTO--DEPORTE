@@ -4,7 +4,6 @@ import WeeklyPlanner from '../components/WeeklyPlanner';
 import WorkoutCard from '../components/WorkoutCard';
 import Section from '../components/Section';
 import CreateWorkoutModal from '../components/CreateWorkoutModal';
-import CreateWorkoutModal from '../components/CreateWorkoutModal';
 import ScheduleWorkoutModal from '../components/ScheduleWorkoutModal';
 import ExerciseDefaultsModal from '../components/ExerciseDefaultsModal';
 import { supabase } from '../lib/supabase';
