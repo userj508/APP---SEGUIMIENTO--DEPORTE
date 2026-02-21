@@ -204,6 +204,35 @@ const Plan = () => {
                     onClose={() => setSelectedExerciseForDefaults(null)}
                 />
             )}
+
+            {/* Delete Confirmation Modal */}
+            {workoutToDelete && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setWorkoutToDelete(null); }}></div>
+                    <div className="relative bg-slate-900 border border-white/10 rounded-3xl w-full max-w-sm p-6 overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 z-10">
+                        <div className="mb-6">
+                            <h3 className="text-xl font-bold text-white mb-2">Delete Workout?</h3>
+                            <p className="text-slate-400 text-sm">
+                                Are you sure you want to delete <span className="text-emerald-400 font-semibold">{workoutToDelete.title}</span>? This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setWorkoutToDelete(null); }}
+                                className="py-3 px-4 rounded-xl font-bold text-sm bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteWorkout(); }}
+                                className="py-3 px-4 rounded-xl font-bold text-sm bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
