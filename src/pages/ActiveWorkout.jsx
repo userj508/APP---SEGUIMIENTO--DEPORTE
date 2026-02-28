@@ -295,18 +295,18 @@ const ActiveWorkout = () => {
     const currentSetData = isExerciseComplete ? currentExercise.sets[currentExercise.sets.length - 1] : currentExercise.sets[currentSetIndex];
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white flex flex-col relative font-sans selection:bg-emerald-500/30">
-            {/* HEADER */}
+        <div className="min-h-screen bg-sikan-cream text-sikan-green flex flex-col relative font-sans selection:bg-sikan-gold/30">
+            {/* SIKAN HEADER */}
             <header className="flex justify-between items-center px-6 py-8 z-10 w-full">
-                <Link to="/" className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer z-50">
-                    <ChevronLeft size={18} />
+                <Link to="/" className="w-10 h-10 flex items-center justify-start text-sikan-green/50 hover:text-sikan-green transition-colors cursor-pointer z-50">
+                    <ChevronLeft size={24} strokeWidth={1.5} />
                 </Link>
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{workoutTitle}</span>
-                    <span className="font-mono text-slate-300 font-semibold">{formatTime(elapsed)}</span>
+                    <span className="text-[10px] font-bold text-sikan-gold uppercase tracking-[0.2em] mb-1">SIKAN</span>
+                    <span className="font-serif text-sikan-green/80 font-medium tracking-wider text-sm">{formatTime(elapsed)}</span>
                 </div>
-                <button className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer z-50">
-                    <MoreHorizontal size={18} />
+                <button className="w-10 h-10 flex items-center justify-end text-sikan-green/50 hover:text-sikan-green transition-colors cursor-pointer z-50">
+                    <MoreHorizontal size={24} strokeWidth={1.5} />
                 </button>
             </header>
 
@@ -315,40 +315,41 @@ const ActiveWorkout = () => {
 
                 {/* 1. Exercise Title */}
                 <div className="text-center mb-10 mt-2">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-white/5 text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">
-                        <span>Set {activeSetDisplay} of {currentExercise.targetSets}</span>
+                    <div className="inline-flex items-center gap-2 mb-3">
+                        <span className="text-[10px] font-medium text-sikan-gold tracking-[0.2em] uppercase">Set {activeSetDisplay} of {currentExercise.targetSets}</span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight mb-3">
+                    <h1 className="text-4xl md:text-5xl font-serif text-sikan-green tracking-tight leading-tight mb-6">
                         {currentExercise.name}
                     </h1>
 
                     {!isExerciseComplete && !isResting && (
-                        <div className="flex items-center justify-center gap-4 mt-2">
+                        <div className="flex items-center justify-center gap-6 mt-4">
                             <div className="flex flex-col items-center">
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Weight (kg)</span>
-                                <div className="flex items-center gap-2 bg-slate-900 border border-white/10 rounded-xl px-3 py-2">
-                                    <button onClick={() => handleSetUpdate('weight', Math.max(0, (currentSetData?.weight || 0) - 2.5))} className="text-slate-400 hover:text-white">-</button>
+                                <span className="text-[9px] text-sikan-green/50 uppercase font-bold tracking-[0.2em] mb-2">Weight <span className="lowercase">kg</span></span>
+                                <div className="flex items-center gap-3 bg-white border border-sikan-gold/20 rounded-2xl px-4 py-2.5 shadow-[0_2px_10px_rgba(42,58,47,0.02)]">
+                                    <button onClick={() => handleSetUpdate('weight', Math.max(0, (currentSetData?.weight || 0) - 2.5))} className="text-sikan-green/40 hover:text-sikan-green transition-colors text-lg">-</button>
                                     <input
                                         type="number"
-                                        className="w-12 bg-transparent text-center font-bold text-lg text-white outline-none"
+                                        className="w-16 bg-transparent text-center font-serif text-2xl text-sikan-green outline-none"
                                         value={currentSetData?.weight || ''}
                                         onChange={(e) => handleSetUpdate('weight', Number(e.target.value))}
                                         placeholder="0"
                                     />
-                                    <button onClick={() => handleSetUpdate('weight', (currentSetData?.weight || 0) + 2.5)} className="text-slate-400 hover:text-white">+</button>
+                                    <button onClick={() => handleSetUpdate('weight', (currentSetData?.weight || 0) + 2.5)} className="text-sikan-green/40 hover:text-sikan-green transition-colors text-lg">+</button>
                                 </div>
                             </div>
+                            <div className="w-[1px] h-10 bg-sikan-gold/20"></div>
                             <div className="flex flex-col items-center">
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Reps</span>
-                                <div className="flex items-center gap-2 bg-slate-900 border border-white/10 rounded-xl px-3 py-2">
-                                    <button onClick={() => handleSetUpdate('reps', Math.max(0, (currentSetData?.reps || 0) - 1))} className="text-slate-400 hover:text-white">-</button>
+                                <span className="text-[9px] text-sikan-green/50 uppercase font-bold tracking-[0.2em] mb-2">Reps</span>
+                                <div className="flex items-center gap-3 bg-white border border-sikan-gold/20 rounded-2xl px-4 py-2.5 shadow-[0_2px_10px_rgba(42,58,47,0.02)]">
+                                    <button onClick={() => handleSetUpdate('reps', Math.max(0, (currentSetData?.reps || 0) - 1))} className="text-sikan-green/40 hover:text-sikan-green transition-colors text-lg">-</button>
                                     <input
                                         type="number"
-                                        className="w-12 bg-transparent text-center font-bold text-lg text-white outline-none"
+                                        className="w-12 bg-transparent text-center font-serif text-2xl text-sikan-green outline-none"
                                         value={currentSetData?.reps || ''}
                                         onChange={(e) => handleSetUpdate('reps', Number(e.target.value))}
                                     />
-                                    <button onClick={() => handleSetUpdate('reps', (currentSetData?.reps || 0) + 1)} className="text-slate-400 hover:text-white">+</button>
+                                    <button onClick={() => handleSetUpdate('reps', (currentSetData?.reps || 0) + 1)} className="text-sikan-green/40 hover:text-sikan-green transition-colors text-lg">+</button>
                                 </div>
                             </div>
                         </div>
@@ -369,11 +370,7 @@ const ActiveWorkout = () => {
 
                 {/* 3. Bottom Progress Strip */}
                 <div className="mt-8 mb-6">
-                    <div className="flex items-center justify-between mb-4 px-1">
-                        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Queue</h3>
-                    </div>
-
-                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6">
+                    <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-6 px-6">
                         {exercises.map((ex, idx) => {
                             const isActive = idx === activeExerciseIndex;
                             const isDone = idx < activeExerciseIndex;
@@ -383,26 +380,26 @@ const ActiveWorkout = () => {
                                     key={ex.id}
                                     onClick={() => setActiveExerciseIndex(idx)}
                                     className={clsx(
-                                        "min-w-[150px] p-4 rounded-[20px] transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px]",
+                                        "min-w-[160px] p-4 rounded-2xl transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px]",
                                         isActive
-                                            ? "bg-slate-900 border border-white/10 ring-1 ring-white/5"
+                                            ? "bg-white shadow-[0_4px_20px_rgba(42,58,47,0.06)] border border-sikan-gold/30"
                                             : isDone
-                                                ? "bg-transparent border border-white/5 opacity-50 grayscale"
-                                                : "bg-transparent border border-white/5 hover:bg-slate-900/50"
+                                                ? "bg-transparent border border-sikan-green/10 opacity-40"
+                                                : "bg-transparent border border-sikan-green/10 hover:bg-white/50"
                                     )}
                                 >
                                     <div className="flex justify-between items-start mb-2">
                                         <div className={clsx(
-                                            "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors",
-                                            isActive ? "bg-white text-slate-900" : "bg-slate-900 border border-white/5 text-slate-400"
+                                            "w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-serif transition-colors",
+                                            isActive ? "bg-sikan-green text-sikan-cream" : "bg-sikan-green/5 text-sikan-green/50"
                                         )}>
                                             {idx + 1}
                                         </div>
                                     </div>
                                     <div>
                                         <p className={clsx(
-                                            "text-xs font-semibold truncate transition-colors",
-                                            isActive ? "text-white" : "text-slate-400"
+                                            "text-xs font-medium truncate transition-colors",
+                                            isActive ? "text-sikan-green" : "text-sikan-green/60"
                                         )}>{ex.name}</p>
                                         <div className="flex gap-1.5 mt-2">
                                             {ex.sets.map((s, i) => (
@@ -411,10 +408,10 @@ const ActiveWorkout = () => {
                                                     className={clsx(
                                                         "w-1.5 h-1.5 rounded-full",
                                                         s.completed
-                                                            ? "bg-emerald-500"
+                                                            ? "bg-sikan-gold"
                                                             : isActive
-                                                                ? "bg-slate-600"
-                                                                : "bg-slate-800"
+                                                                ? "bg-sikan-green/20"
+                                                                : "bg-sikan-green/10"
                                                     )}
                                                 />
                                             ))}

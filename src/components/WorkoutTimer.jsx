@@ -7,7 +7,6 @@ const WorkoutTimer = ({ isResting, restTime, targetReps, onAction, onAdjustTime 
     // If working, we show the "Target Reps" + Finish Button
 
     // Circular Progress Calculation for Rest Time
-    // Assuming max rest is 60s for now, or pass maxRest from parent
     const maxRest = 60;
     const percentage = isResting ? ((maxRest - restTime) / maxRest) * 100 : 0;
     const strokeDashoffset = 440 - (440 * percentage) / 100; // 440 is roughly circumference of r=70
@@ -18,34 +17,35 @@ const WorkoutTimer = ({ isResting, restTime, targetReps, onAction, onAdjustTime 
             <button
                 onClick={onAction}
                 className={clsx(
-                    "w-64 h-64 rounded-full flex flex-col items-center justify-center relative transition-all duration-500 transform active:scale-95 group outline-none",
+                    "w-64 h-64 rounded-full flex flex-col items-center justify-center relative transition-all duration-700 transform active:scale-[0.98] group outline-none",
                     isResting
-                        ? "bg-emerald-500 shadow-[0_0_60px_rgba(16,185,129,0.4)] border-4 border-emerald-400" // Resting = Completed/Success State visually
-                        : "bg-slate-800 border-4 border-slate-700 hover:border-slate-600 shadow-xl" // Working = Neutral State
+                        ? "bg-sikan-cream shadow-[0_4px_40px_rgba(42,58,47,0.08)] border border-sikan-green/10" // Resting = Serene countdown
+                        : "bg-sikan-cream shadow-[0_4px_30px_rgba(42,58,47,0.05)] border border-sikan-green/20 hover:border-sikan-green/40" // Working = Clean Target
                 )}
             >
                 {/* Custom SVG Progress Ring for Rest */}
                 {isResting && (
-                    <svg className="absolute top-0 left-0 w-full h-full -rotate-90 pointer-events-none">
+                    <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
                         <circle
                             cx="128"
                             cy="128"
-                            r="124"
+                            r="126"
                             stroke="CurrentColor"
-                            strokeWidth="8"
+                            strokeWidth="2"
                             fill="transparent"
-                            className="text-emerald-600/30"
+                            className="text-sikan-gold/20"
                         />
                         <circle
                             cx="128"
                             cy="128"
-                            r="124"
+                            r="126"
                             stroke="CurrentColor"
-                            strokeWidth="8"
+                            strokeWidth="3"
                             fill="transparent"
-                            strokeDasharray="780"
-                            strokeDashoffset={strokeDashoffset}
-                            className="text-white transition-all duration-1000 ease-linear"
+                            strokeDasharray="791" // 2 * pi * 126
+                            strokeDashoffset={791 - (791 * percentage) / 100}
+                            className="text-sikan-green transition-all duration-1000 ease-linear"
+                            strokeLinecap="round"
                         />
                     </svg>
                 )}
@@ -54,24 +54,27 @@ const WorkoutTimer = ({ isResting, restTime, targetReps, onAction, onAdjustTime 
                 <div className="z-10 flex flex-col items-center">
                     {isResting ? (
                         <>
-                            <span className="text-sm font-bold text-emerald-100 uppercase tracking-widest mb-1 animate-pulse">Resting</span>
-                            <span className="text-7xl font-bold text-white tabular-nums tracking-tighter">
+                            <span className="text-[10px] font-sans font-medium text-sikan-gold uppercase tracking-[0.2em] mb-2">Resting</span>
+                            <span className="text-6xl font-serif font-medium text-sikan-green tabular-nums tracking-tighter">
                                 {Math.floor(restTime / 60)}:{(restTime % 60).toString().padStart(2, '0')}
                             </span>
-                            <div className="flex items-center gap-1 mt-3 text-emerald-100/80 text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
-                                <SkipForward size={14} /> Tap to Skip
+                            <div className="flex items-center gap-1.5 mt-4 text-sikan-green/60 text-[10px] font-sans font-semibold uppercase tracking-widest group-hover:text-sikan-green transition-colors">
+                                <SkipForward size={12} strokeWidth={2} /> Skip Rest
                             </div>
                         </>
                     ) : (
                         <>
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Target</span>
-                            <span className="text-7xl font-bold text-white tracking-tighter mb-1">
+                            <span className="text-[10px] items-center flex flex-col font-sans font-medium text-sikan-gold uppercase tracking-[0.2em] mb-1">Target</span>
+                            <span className="text-7xl font-serif font-medium text-sikan-green tracking-tighter mb-1 mt-2">
                                 {targetReps}
                             </span>
-                            <span className="text-lg font-bold text-slate-500 uppercase tracking-wide">Reps</span>
-                            <div className="absolute bottom-10 flex items-center gap-2 bg-slate-700/50 px-4 py-1.5 rounded-full backdrop-blur-sm group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
-                                <Check size={16} className="text-slate-300 group-hover:text-white" />
-                                <span className="text-xs font-bold text-slate-300 group-hover:text-white uppercase tracking-wide">Finish Set</span>
+                            <span className="text-sm font-serif italic text-sikan-green/70 mb-2">Reps</span>
+
+                            <div className="absolute bottom-8 flex items-center justify-center w-full">
+                                <div className="flex items-center gap-2 bg-sikan-green text-sikan-cream px-5 py-2.5 rounded-full shadow-md group-hover:bg-sikan-dark group-hover:scale-105 transition-all duration-300">
+                                    <Check size={14} strokeWidth={2.5} className="text-sikan-cream" />
+                                    <span className="text-[10px] font-sans font-bold uppercase tracking-widest">Done</span>
+                                </div>
                             </div>
                         </>
                     )}
@@ -80,9 +83,9 @@ const WorkoutTimer = ({ isResting, restTime, targetReps, onAction, onAdjustTime 
 
             {/* Adjustment Buttons */}
             {isResting && (
-                <div className="absolute -bottom-16 flex gap-3">
-                    <button onClick={(e) => { e.stopPropagation(); onAdjustTime(-10); }} className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-bold hover:bg-slate-700 active:scale-95">-10s</button>
-                    <button onClick={(e) => { e.stopPropagation(); onAdjustTime(10); }} className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-bold hover:bg-slate-700 active:scale-95">+10s</button>
+                <div className="absolute -bottom-20 flex justify-center w-full gap-4">
+                    <button onClick={(e) => { e.stopPropagation(); onAdjustTime(-15); }} className="w-12 h-12 flex items-center justify-center bg-sikan-cream border border-sikan-gold/30 rounded-full text-sikan-green text-[10px] font-sans font-bold hover:bg-sikan-gold/10 hover:border-sikan-gold transition-colors active:scale-95 shadow-sm">-15s</button>
+                    <button onClick={(e) => { e.stopPropagation(); onAdjustTime(15); }} className="w-12 h-12 flex items-center justify-center bg-sikan-cream border border-sikan-gold/30 rounded-full text-sikan-green text-[10px] font-sans font-bold hover:bg-sikan-gold/10 hover:border-sikan-gold transition-colors active:scale-95 shadow-sm">+15s</button>
                 </div>
             )}
         </div>
