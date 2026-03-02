@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import CreateWorkoutModal from '../components/CreateWorkoutModal';
 import DayScheduleModal from '../components/DayScheduleModal';
+import CategoryScheduleModal from '../components/CategoryScheduleModal';
 
 
 
@@ -21,6 +22,7 @@ const Home = () => {
     const [weekDates, setWeekDates] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [selectedDaySchedule, setSelectedDaySchedule] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState(null);
     const [indicators, setIndicators] = useState({ training: 0, nutrition: 0, mindfulness: 0 });
 
     const [loading, setLoading] = useState(true);
@@ -140,7 +142,7 @@ const Home = () => {
         <div className="min-h-screen bg-sikan-bg text-sikan-dark px-6 pt-12 pb-28 font-sans selection:bg-sikan-gold/30 relative">
             {/* Top Navigation Bar */}
             <header className="mb-10 flex justify-between items-center">
-                <button className="text-sikan-dark">
+                <button onClick={() => alert("Settings/Menu coming soon!")} className="text-sikan-dark hover:text-sikan-olive transition-colors">
                     <Menu size={24} strokeWidth={1.5} />
                 </button>
                 <img src="/logo.jpg" alt="SIKAN Logo" className="w-16 h-auto drop-shadow-sm mix-blend-multiply" />
@@ -163,23 +165,23 @@ const Home = () => {
             {/* Today's Focus Widgets */}
             <div className="grid grid-cols-3 gap-3 mb-10">
                 {/* Training */}
-                <div className="bg-[#EAE4DC] rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                <button onClick={() => setSelectedCategory('Training')} className="bg-[#EAE4DC] hover:bg-[#E3DCD4] transition-colors rounded-xl p-4 flex flex-col items-center justify-center text-center outline-none">
                     <Dumbbell size={24} strokeWidth={1.5} className="text-sikan-dark mb-3" />
                     <span className="text-[10px] uppercase font-semibold text-sikan-dark tracking-wider mb-1">Training</span>
                     <span className="text-2xl font-bold text-sikan-dark tracking-tighter">{indicators.training}%</span>
-                </div>
+                </button>
                 {/* Nutrition */}
-                <div className="bg-sikan-olive rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-lg shadow-sikan-olive/30 transform scale-105 z-10">
+                <button onClick={() => setSelectedCategory('Nutrition')} className="bg-sikan-olive hover:bg-sikan-dark transition-colors rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-lg shadow-sikan-olive/30 transform scale-105 z-10 outline-none">
                     <Apple size={24} strokeWidth={1.5} className="text-sikan-bg mb-3" />
                     <span className="text-[10px] uppercase font-semibold text-sikan-bg/90 tracking-wider mb-1">Nutrition</span>
                     <span className="text-2xl font-bold text-sikan-bg tracking-tighter">{indicators.nutrition}%</span>
-                </div>
+                </button>
                 {/* Mindfulness */}
-                <div className="bg-[#E3C7A1] rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                <button onClick={() => setSelectedCategory('Mindfulness')} className="bg-[#E3C7A1] hover:bg-[#DABF99] transition-colors rounded-xl p-4 flex flex-col items-center justify-center text-center outline-none">
                     <Flower2 size={24} strokeWidth={1.5} className="text-[#A47146] mb-3" />
                     <span className="text-[10px] uppercase font-semibold text-[#A47146] tracking-wider mb-1">Mindfulness</span>
                     <span className="text-2xl font-bold text-[#A47146] tracking-tighter">{indicators.mindfulness}%</span>
-                </div>
+                </button>
             </div>
 
             {/* Your Plan */}
@@ -273,6 +275,14 @@ const Home = () => {
                     date={selectedDaySchedule.date}
                     scheduleItems={selectedDaySchedule.items}
                     onClose={() => setSelectedDaySchedule(null)}
+                />
+            )}
+
+            {selectedCategory && (
+                <CategoryScheduleModal
+                    category={selectedCategory}
+                    weekSchedule={weekSchedule}
+                    onClose={() => setSelectedCategory(null)}
                 />
             )}
         </div>
