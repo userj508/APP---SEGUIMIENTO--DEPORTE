@@ -140,22 +140,22 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-950 border border-white/10 rounded-[28px] w-full max-w-lg p-7 relative animate-in fade-in zoom-in duration-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-sikan-dark/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-sikan-bg border border-sikan-border rounded-[28px] w-full max-w-lg p-7 relative animate-in fade-in zoom-in duration-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-colors z-10"
+                    className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-sikan-card border border-sikan-border text-sikan-muted hover:text-sikan-dark transition-colors z-10 shadow-sm"
                 >
                     <X size={16} />
                 </button>
 
                 <div className="flex items-center gap-4 mb-8">
-                    <div className="w-12 h-12 rounded-[18px] bg-slate-900 border border-white/5 flex items-center justify-center text-slate-300">
+                    <div className="w-12 h-12 rounded-[18px] bg-[#EAE4DC] border border-sikan-border flex items-center justify-center text-sikan-olive shadow-inner">
                         <Dumbbell size={20} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-white tracking-tight">New Template</h2>
-                        <p className="text-xs text-slate-500 font-medium">Build a reusable session.</p>
+                        <h2 className="text-xl font-serif font-bold text-sikan-dark tracking-tight">New Template</h2>
+                        <p className="text-xs text-sikan-muted font-bold">Build a reusable session or sequence.</p>
                     </div>
                 </div>
 
@@ -163,36 +163,52 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 gap-5">
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-2">Title</label>
+                                <label className="block text-[10px] font-bold text-sikan-muted tracking-widest uppercase mb-2">Title</label>
                                 <input
                                     type="text"
                                     required
                                     value={title}
                                     onChange={e => setTitle(e.target.value)}
-                                    className="w-full bg-slate-900 border border-white/5 rounded-[16px] px-5 py-4 text-white focus:border-white/20 focus:ring-1 focus:ring-white/20 outline-none text-sm transition-all"
-                                    placeholder="e.g. Upper Body Push"
+                                    className="w-full bg-sikan-card border border-sikan-border rounded-[16px] px-5 py-4 text-sikan-dark focus:border-sikan-olive/30 focus:shadow-md outline-none font-bold text-sm transition-all"
+                                    placeholder="e.g. Morning Yoga Flow"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-bold text-sikan-muted tracking-widest uppercase mb-2">Type</label>
+                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                    {['Strength', 'Cardio', 'Yoga', 'Mindfulness', 'Nutrition'].map(t => (
+                                        <button
+                                            key={t}
+                                            type="button"
+                                            onClick={() => setType(t)}
+                                            className={`shrink-0 px-4 py-2 rounded-full border text-xs font-bold transition-all ${type === t ? 'bg-sikan-olive text-sikan-bg border-sikan-olive shadow-md' : 'bg-sikan-card text-sikan-muted border-sikan-border hover:border-sikan-olive/30'}`}
+                                        >
+                                            {t}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-2">Movements</label>
+                            <label className="block text-[10px] font-bold text-sikan-muted tracking-widest uppercase mb-2">Include Movements</label>
 
                             {/* Search Input */}
                             <div className="relative mb-4">
-                                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-sikan-muted" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
-                                    className="w-full bg-slate-900 border border-white/5 rounded-[16px] pl-11 pr-5 py-4 text-white focus:border-white/20 focus:ring-1 focus:ring-white/20 outline-none text-sm transition-all"
-                                    placeholder="Search exercises..."
+                                    className="w-full bg-sikan-card border border-sikan-border rounded-[16px] pl-11 pr-5 py-4 text-sikan-dark font-bold focus:border-sikan-olive/30 focus:shadow-md outline-none text-sm transition-all"
+                                    placeholder="Search exercises or poses..."
                                 />
                                 {searchQuery && searchResults.length === 0 && !isSearching && (
                                     <button
                                         type="button"
                                         onClick={createCustomExercise}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-white/5 transition-colors text-white"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#EAE4DC] hover:bg-sikan-olive hover:text-sikan-bg text-[11px] font-bold px-3 py-1.5 rounded-lg border border-sikan-border transition-colors text-sikan-dark shadow-sm"
                                     >
                                         + Add custom
                                     </button>
@@ -201,17 +217,17 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
 
                             {/* Search Results Dropdown */}
                             {searchResults.length > 0 && (
-                                <div className="bg-slate-800 rounded-[16px] border border-white/5 overflow-hidden mb-4 shadow-xl">
+                                <div className="bg-sikan-card rounded-[16px] border border-sikan-border overflow-hidden mb-4 shadow-xl">
                                     {searchResults.map((ex, index) => (
                                         <button
                                             key={ex.id}
                                             type="button"
                                             onClick={() => addExercise(ex)}
-                                            className="w-full text-left px-5 py-3.5 hover:bg-slate-700 text-sm font-medium text-slate-200 border-b border-white/5 last:border-0 flex justify-between items-center group transition-colors"
+                                            className="w-full text-left px-5 py-3.5 hover:bg-[#EAE4DC] text-sm font-bold text-sikan-dark border-b border-sikan-border last:border-0 flex justify-between items-center group transition-colors"
                                         >
                                             <span>{ex.name}</span>
-                                            <div className="w-6 h-6 rounded-full bg-slate-900 group-hover:bg-slate-600 flex items-center justify-center transition-colors">
-                                                <Plus size={12} className="text-slate-400 group-hover:text-white" />
+                                            <div className="w-6 h-6 rounded-full bg-sikan-bg group-hover:bg-sikan-olive flex items-center justify-center transition-colors border border-sikan-border group-hover:border-sikan-olive">
+                                                <Plus size={12} className="text-sikan-muted group-hover:text-sikan-bg" />
                                             </div>
                                         </button>
                                     ))}
@@ -221,37 +237,37 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
                             {/* Selected Exercises List */}
                             <div className="space-y-2 mt-4">
                                 {selectedExercises.map((ex, idx) => (
-                                    <div key={ex.id} className="bg-slate-900 border border-white/5 rounded-[16px] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 group">
+                                    <div key={ex.id} className="bg-sikan-card border border-sikan-border rounded-[16px] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 group shadow-sm">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-6 h-6 rounded-full bg-slate-950 border border-white/5 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                                            <div className="w-6 h-6 rounded-full bg-[#EAE4DC] border border-sikan-border flex items-center justify-center text-[10px] font-bold text-sikan-olive shadow-inner">
                                                 {idx + 1}
                                             </div>
-                                            <span className="text-sm font-semibold text-white">{ex.name}</span>
+                                            <span className="text-sm font-bold text-sikan-dark">{ex.name}</span>
                                         </div>
 
                                         <div className="flex items-center gap-2 pl-9 md:pl-0">
-                                            <div className="flex items-center gap-1.5 bg-slate-950 rounded-xl px-2.5 py-1.5 border border-white/5">
-                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sets</span>
+                                            <div className="flex items-center gap-1.5 bg-sikan-bg rounded-xl px-2.5 py-1.5 border border-sikan-border">
+                                                <span className="text-[10px] font-bold text-sikan-muted uppercase tracking-widest">Sets</span>
                                                 <input
                                                     type="number"
                                                     value={ex.sets}
                                                     onChange={e => handleSetsRepsChange(ex.id, 'sets', e.target.value)}
-                                                    className="w-8 bg-transparent text-center text-sm font-bold text-white focus:outline-none"
+                                                    className="w-8 bg-transparent text-center text-sm font-bold text-sikan-dark focus:outline-none"
                                                 />
                                             </div>
-                                            <div className="flex items-center gap-1.5 bg-slate-950 rounded-xl px-2.5 py-1.5 border border-white/5">
-                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reps</span>
+                                            <div className="flex items-center gap-1.5 bg-sikan-bg rounded-xl px-2.5 py-1.5 border border-sikan-border">
+                                                <span className="text-[10px] font-bold text-sikan-muted uppercase tracking-widest">Reps</span>
                                                 <input
                                                     type="number"
                                                     value={ex.reps}
                                                     onChange={e => handleSetsRepsChange(ex.id, 'reps', e.target.value)}
-                                                    className="w-8 bg-transparent text-center text-sm font-bold text-white focus:outline-none"
+                                                    className="w-8 bg-transparent text-center text-sm font-bold text-sikan-dark focus:outline-none"
                                                 />
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => removeExercise(ex.id)}
-                                                className="w-8 h-8 rounded-xl bg-slate-950 border border-transparent hover:border-rose-500/30 flex items-center justify-center text-slate-500 hover:text-rose-400 transition-colors ml-1"
+                                                className="w-8 h-8 rounded-xl bg-sikan-bg border border-transparent hover:border-rose-500/30 flex items-center justify-center text-sikan-muted hover:text-rose-500 transition-colors ml-1 shadow-sm"
                                             >
                                                 <Trash2 size={14} />
                                             </button>
@@ -260,8 +276,8 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
                                 ))}
 
                                 {selectedExercises.length === 0 && (
-                                    <div className="text-center py-10 border border-dashed border-white/10 rounded-[20px]">
-                                        <p className="text-xs text-slate-500 font-medium">Search to add movements.</p>
+                                    <div className="text-center py-10 border border-dashed border-sikan-border bg-sikan-card rounded-[20px]">
+                                        <p className="text-xs text-sikan-muted font-bold">Search to add movements.</p>
                                     </div>
                                 )}
                             </div>
@@ -270,7 +286,7 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
                         <button
                             type="submit"
                             disabled={loading || selectedExercises.length === 0}
-                            className="w-full bg-slate-100 hover:bg-white disabled:opacity-50 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold text-sm py-4 rounded-[16px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-6"
+                            className="w-full bg-sikan-olive hover:bg-sikan-dark disabled:opacity-50 disabled:bg-sikan-card disabled:text-sikan-muted text-sikan-bg font-bold text-sm py-4 rounded-[16px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-6 shadow-md"
                         >
                             {loading ? <Loader2 className="animate-spin" size={18} /> : <span>Create Template</span>}
                             {!loading && <ArrowRight size={16} />}

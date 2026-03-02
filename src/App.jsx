@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Plan from './pages/Plan';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
+import Mealprep from './pages/Mealprep';
 import Login from './pages/Login';
 import ActiveWorkout from './pages/ActiveWorkout';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
@@ -29,6 +30,7 @@ function App() {
           <Route path="/workout" element={<ProtectedRoute><ActiveWorkout /></ProtectedRoute>} />
           <Route path="/workout/:workoutId" element={<ProtectedRoute><ActiveWorkout /></ProtectedRoute>} />
           <Route path="/plan" element={<ProtectedRoute><Layout><Plan /></Layout></ProtectedRoute>} />
+          <Route path="/mealprep" element={<ProtectedRoute><Layout><Mealprep /></Layout></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
         </Routes>
       </Router>

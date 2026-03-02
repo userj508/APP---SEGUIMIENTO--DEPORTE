@@ -21,6 +21,7 @@ const Home = () => {
     const [weekDates, setWeekDates] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [selectedDaySchedule, setSelectedDaySchedule] = useState(null);
+    const [indicators, setIndicators] = useState({ training: 0, nutrition: 0, mindfulness: 0 });
 
     const [loading, setLoading] = useState(true);
 
@@ -97,6 +98,28 @@ const Home = () => {
                 setWeekSchedule(weekData || []);
                 setWeekDates(dates);
 
+                // 4. Calculate Analytics Indicators from Completed Logs
+                const { data: logsData } = await supabase
+                    .from('workout_logs')
+                    .select('*, workouts(type)')
+                    .eq('user_id', user.id)
+                    .gte('completed_at', startDateStr);
+
+                let trainCount = 0; let nutCount = 0; let mindCount = 0;
+
+                (logsData || []).forEach(log => {
+                    const type = log.workouts?.type || 'Strength'; // Fallback to strength for old workouts
+                    if (type === 'Strength' || type === 'Cardio') trainCount++;
+                    else if (type === 'Nutrition') nutCount++;
+                    else if (type === 'Yoga' || type === 'Mindfulness') mindCount++;
+                });
+
+                setIndicators({
+                    training: Math.min(Math.round((trainCount / 4) * 100), 100) || 0, // Goal: 4 workouts/week
+                    nutrition: Math.min(Math.round((nutCount / 14) * 100), 100) || 0, // Goal: 14 meals/week
+                    mindfulness: Math.min(Math.round((mindCount / 2) * 100), 100) || 0 // Goal: 2 sessions/week
+                });
+
             } catch (error) {
                 console.error("Error fetching home data:", error);
             } finally {
@@ -143,19 +166,19 @@ const Home = () => {
                 <div className="bg-[#EAE4DC] rounded-xl p-4 flex flex-col items-center justify-center text-center">
                     <Dumbbell size={24} strokeWidth={1.5} className="text-sikan-dark mb-3" />
                     <span className="text-[10px] uppercase font-semibold text-sikan-dark tracking-wider mb-1">Training</span>
-                    <span className="text-2xl font-bold text-sikan-dark tracking-tighter">80%</span>
+                    <span className="text-2xl font-bold text-sikan-dark tracking-tighter">{indicators.training}%</span>
                 </div>
                 {/* Nutrition */}
                 <div className="bg-sikan-olive rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-lg shadow-sikan-olive/30 transform scale-105 z-10">
                     <Apple size={24} strokeWidth={1.5} className="text-sikan-bg mb-3" />
                     <span className="text-[10px] uppercase font-semibold text-sikan-bg/90 tracking-wider mb-1">Nutrition</span>
-                    <span className="text-2xl font-bold text-sikan-bg tracking-tighter">70%</span>
+                    <span className="text-2xl font-bold text-sikan-bg tracking-tighter">{indicators.nutrition}%</span>
                 </div>
                 {/* Mindfulness */}
                 <div className="bg-[#E3C7A1] rounded-xl p-4 flex flex-col items-center justify-center text-center">
                     <Flower2 size={24} strokeWidth={1.5} className="text-[#A47146] mb-3" />
                     <span className="text-[10px] uppercase font-semibold text-[#A47146] tracking-wider mb-1">Mindfulness</span>
-                    <span className="text-2xl font-bold text-[#A47146] tracking-tighter">60%</span>
+                    <span className="text-2xl font-bold text-[#A47146] tracking-tighter">{indicators.mindfulness}%</span>
                 </div>
             </div>
 

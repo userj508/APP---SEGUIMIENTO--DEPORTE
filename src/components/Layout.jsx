@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, BarChart2, Calendar, User } from 'lucide-react';
+import { Home, BarChart2, Calendar, User, Apple } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 import SikanLogo from './SikanLogo';
@@ -36,6 +36,7 @@ const Layout = ({ children }) => {
             <nav className="fixed bottom-0 left-0 right-0 bg-sikan-bg/90 backdrop-blur-md border-t border-sikan-border px-6 py-4 flex justify-between items-center z-50 safe-area-bottom shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
                 <NavItem to="/" icon={Home} label="Home" />
                 <NavItem to="/plan" icon={Calendar} label="Plan" />
+                <NavItem to="/mealprep" icon={Apple} label="Mealprep" />
                 <NavItem to="/dashboard" icon={BarChart2} label="Stats" />
                 <NavItem to="/profile" icon={User} label="Profile" />
             </nav>
