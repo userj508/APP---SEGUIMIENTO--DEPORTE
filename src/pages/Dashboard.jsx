@@ -167,17 +167,17 @@ const Dashboard = () => {
     const minutes = stats.totalDurationMinutes % 60;
 
     if (loading) {
-        return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="animate-spin text-slate-500" size={32} /></div>;
+        return <div className="min-h-screen bg-sikan-bg flex items-center justify-center"><Loader2 className="animate-spin text-sikan-olive" size={32} /></div>;
     }
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white px-5 pt-10 pb-28 font-sans selection:bg-emerald-500/30">
+        <div className="min-h-screen bg-sikan-bg text-sikan-dark px-5 pt-10 pb-28 font-sans selection:bg-sikan-gold/30">
             <header className="mb-10 flex justify-between items-center">
                 <div>
-                    <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Overview</h2>
-                    <h1 className="text-3xl font-bold tracking-tight text-white">Progress</h1>
+                    <h2 className="text-xs font-semibold text-sikan-muted uppercase tracking-[0.2em] mb-1.5">Overview</h2>
+                    <h1 className="text-3xl font-serif font-bold tracking-tight text-sikan-dark">Progress</h1>
                 </div>
-                <button className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 text-slate-300 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-colors">
+                <button className="w-10 h-10 rounded-full bg-sikan-card border border-sikan-border text-sikan-olive flex items-center justify-center hover:bg-[#EAE4DC] hover:text-sikan-dark shadow-sm transition-colors">
                     <Calendar size={18} />
                 </button>
             </header>
@@ -185,19 +185,19 @@ const Dashboard = () => {
             {/* Weekly Consistency */}
             <section className="mb-8">
                 <div className="flex justify-between items-end mb-4">
-                    <h2 className="text-lg font-bold">Consistency</h2>
-                    <span className="text-xs font-semibold text-emerald-500">
+                    <h2 className="text-lg font-serif font-bold text-sikan-dark">Consistency</h2>
+                    <span className="text-xs font-bold text-sikan-olive">
                         {stats.currentStreak > 0 ? `${stats.currentStreak} Day Streak!` : 'Keep going!'}
                     </span>
                 </div>
-                <div className="bg-slate-900 p-6 rounded-[24px] border border-white/5 relative overflow-hidden">
+                <div className="bg-sikan-card p-6 rounded-[24px] border border-sikan-border shadow-sm relative overflow-hidden">
                     <div className="flex justify-between items-end h-28 mb-1 relative z-10 w-full px-2">
                         {stats.weeklyData.map((day, index) => (
                             <div key={index} className="flex flex-col items-center group w-full relative">
                                 <div
-                                    className={`w-2 transition-all duration-700 ease-out rounded-full ${day.active ? 'bg-slate-200 group-hover:bg-white' : 'bg-slate-800'} ${day.height}`}
+                                    className={`w-2 transition-all duration-700 ease-out rounded-full ${day.active ? 'bg-sikan-olive group-hover:bg-sikan-dark' : 'bg-[#EAE4DC] group-hover:bg-[#E3C7A1]'} ${day.height}`}
                                 ></div>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase mt-4">{day.day}</span>
+                                <span className="text-[10px] text-sikan-muted font-bold uppercase mt-4 tracking-wider">{day.day}</span>
                             </div>
                         ))}
                     </div>
@@ -206,30 +206,30 @@ const Dashboard = () => {
 
             {/* Stats Cards */}
             <section className="grid grid-cols-2 gap-3 mb-10">
-                <div className="bg-slate-900 p-5 rounded-[20px] border border-white/5 flex flex-col justify-between min-h-[110px]">
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Total Sessions</span>
+                <div className="bg-sikan-card p-5 rounded-[20px] border border-sikan-border shadow-sm flex flex-col justify-between min-h-[110px]">
+                    <span className="text-[10px] text-sikan-muted font-bold uppercase tracking-widest">Total Sessions</span>
                     <div className="flex items-baseline gap-2 mt-auto">
-                        <span className="text-3xl font-bold tracking-tight text-white">{stats.totalSessions}</span>
+                        <span className="text-3xl font-serif font-bold tracking-tight text-sikan-dark">{stats.totalSessions}</span>
                     </div>
                 </div>
-                <div className="bg-slate-900 p-5 rounded-[20px] border border-white/5 flex flex-col justify-between min-h-[110px] overflow-hidden">
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate">Duration</span>
+                <div className="bg-sikan-card p-5 rounded-[20px] border border-sikan-border shadow-sm flex flex-col justify-between min-h-[110px] overflow-hidden">
+                    <span className="text-[10px] text-sikan-muted font-bold uppercase tracking-widest truncate">Duration</span>
                     <div className="flex items-baseline mt-auto">
-                        <span className="text-3xl font-bold tracking-tight text-white">{hours}</span>
-                        <span className="text-xs text-slate-500 font-semibold ml-0.5 mr-1.5">h</span>
-                        <span className="text-3xl font-bold tracking-tight text-white">{minutes}</span>
-                        <span className="text-xs text-slate-500 font-semibold ml-0.5">m</span>
+                        <span className="text-3xl font-serif font-bold tracking-tight text-sikan-dark">{hours}</span>
+                        <span className="text-xs text-sikan-muted font-bold ml-0.5 mr-1.5">h</span>
+                        <span className="text-3xl font-serif font-bold tracking-tight text-sikan-dark">{minutes}</span>
+                        <span className="text-xs text-sikan-muted font-bold ml-0.5">m</span>
                     </div>
                 </div>
-                <div className="bg-slate-900 p-5 rounded-[20px] border border-white/5 flex items-center justify-between col-span-2">
+                <div className="bg-sikan-card p-5 rounded-[20px] border border-sikan-border shadow-sm flex items-center justify-between col-span-2">
                     <div>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Current Streak</span>
+                        <span className="text-[10px] text-sikan-muted font-bold uppercase tracking-widest block mb-1">Current Streak</span>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-bold tracking-tight text-white">{stats.currentStreak}</span>
-                            <span className="text-xs text-slate-400 font-semibold">Days</span>
+                            <span className="text-3xl font-serif font-bold tracking-tight text-sikan-dark">{stats.currentStreak}</span>
+                            <span className="text-xs text-sikan-muted font-bold">Days</span>
                         </div>
                     </div>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-inner shadow-black/20 ${stats.currentStreak > 0 ? 'bg-orange-500/10 text-orange-500' : 'bg-slate-800 text-slate-600'}`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border shadow-inner ${stats.currentStreak > 0 ? 'bg-[#FFEED9] text-[#A47146] border-[#E3C7A1]' : 'bg-[#EAE4DC] text-sikan-muted border-sikan-border'}`}>
                         <Flame size={20} className="fill-current" />
                     </div>
                 </div>
@@ -238,7 +238,7 @@ const Dashboard = () => {
             {/* Recent History / Milestones */}
             <section>
                 <div className="flex justify-between items-center mb-5">
-                    <h2 className="text-lg font-bold">Recent History</h2>
+                    <h2 className="text-lg font-serif font-bold text-sikan-dark">Recent History</h2>
                 </div>
 
                 {stats.recentMilestones.length > 0 ? (
@@ -246,26 +246,26 @@ const Dashboard = () => {
                         {stats.recentMilestones.map((milestone, idx) => {
                             const Icon = milestone.icon;
                             return (
-                                <div key={idx} className="flex items-center p-4 bg-slate-900 rounded-[20px] border border-white/5 group transition-colors hover:border-white/10">
-                                    <div className="w-12 h-12 rounded-full bg-slate-950 flex items-center justify-center text-slate-300 mr-4 border border-white/5 shadow-inner">
+                                <div key={idx} className="flex items-center p-4 bg-sikan-card rounded-[20px] border border-sikan-border group transition-all hover:shadow-md hover:border-sikan-olive/30">
+                                    <div className="w-12 h-12 rounded-full bg-[#EAE4DC] flex items-center justify-center text-sikan-olive mr-4 border border-sikan-border shadow-inner group-hover:bg-sikan-olive group-hover:text-[#EAE4DC] transition-colors">
                                         <Icon size={18} />
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex justify-between items-center">
-                                            <h3 className="font-bold text-white text-sm">{milestone.title}</h3>
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase">{milestone.timeText}</span>
+                                            <h3 className="font-bold text-sikan-dark text-sm group-hover:text-sikan-olive transition-colors">{milestone.title}</h3>
+                                            <span className="text-[10px] text-sikan-gold font-bold uppercase tracking-wider">{milestone.timeText}</span>
                                         </div>
-                                        <p className="text-xs text-slate-400 mt-0.5">{milestone.desc}</p>
+                                        <p className="text-xs text-sikan-muted mt-0.5">{milestone.desc}</p>
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
                 ) : (
-                    <div className="text-center py-12 px-6 bg-slate-900 border border-white/5 border-dashed rounded-[24px]">
-                        <Trophy size={24} className="mx-auto text-slate-600 mb-3" />
-                        <p className="text-sm font-medium text-slate-400">No sessions recorded yet.</p>
-                        <p className="text-xs text-slate-500 mt-1">Complete a workout to see your history.</p>
+                    <div className="text-center py-12 px-6 bg-sikan-card border border-sikan-border border-dashed rounded-[24px]">
+                        <Trophy size={24} className="mx-auto text-sikan-muted mb-3" />
+                        <p className="text-sm font-bold text-sikan-dark">No sessions recorded yet.</p>
+                        <p className="text-xs text-sikan-muted mt-1 font-semibold">Complete a workout to see your history.</p>
                     </div>
                 )}
             </section>
@@ -273,8 +273,8 @@ const Dashboard = () => {
             {/* Exercise Progress Section */}
             <section className="mt-10">
                 <div className="flex justify-between items-center mb-5">
-                    <h2 className="text-lg font-bold">Exercise Progress</h2>
-                    <span className="text-xs font-semibold text-emerald-500">
+                    <h2 className="text-lg font-serif font-bold text-sikan-dark">Exercise Progress</h2>
+                    <span className="text-xs font-bold text-sikan-olive tracking-wider uppercase">
                         {stats.performedExercises.length} Total
                     </span>
                 </div>
@@ -285,13 +285,13 @@ const Dashboard = () => {
                             <div
                                 key={exercise.id}
                                 onClick={() => setSelectedExercise(exercise)}
-                                className="bg-slate-900 p-4 rounded-[20px] border border-white/5 flex flex-col justify-between min-h-[110px] cursor-pointer hover:bg-slate-800 transition-colors group"
+                                className="bg-sikan-card p-4 rounded-[20px] border border-sikan-border flex flex-col justify-between min-h-[110px] cursor-pointer hover:shadow-md hover:border-sikan-olive/30 shadow-sm transition-all group"
                             >
-                                <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">{exercise.category}</span>
+                                <span className="text-[10px] text-sikan-gold-light font-bold uppercase tracking-widest">{exercise.category}</span>
                                 <div className="mt-auto">
-                                    <h3 className="text-sm font-bold text-white mb-1.5 leading-tight group-hover:text-emerald-400 transition-colors">{exercise.name}</h3>
-                                    <div className="flex items-center text-[10px] font-semibold text-slate-500">
-                                        <TrendingUp size={10} className="mr-1" />
+                                    <h3 className="text-sm font-bold text-sikan-dark mb-1.5 leading-tight group-hover:text-sikan-olive transition-colors">{exercise.name}</h3>
+                                    <div className="flex items-center text-[10px] font-bold text-sikan-muted">
+                                        <TrendingUp size={10} className="mr-1 text-sikan-olive" />
                                         {exercise.logCount} Sets Logged
                                     </div>
                                 </div>
@@ -299,10 +299,10 @@ const Dashboard = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-12 px-6 bg-slate-900 border border-white/5 border-dashed rounded-[24px]">
-                        <Activity size={24} className="mx-auto text-slate-600 mb-3" />
-                        <p className="text-sm font-medium text-slate-400">No exercises tracked yet.</p>
-                        <p className="text-xs text-slate-500 mt-1">Complete workouts to see progress charts.</p>
+                    <div className="text-center py-12 px-6 bg-sikan-card border border-sikan-border border-dashed rounded-[24px]">
+                        <Activity size={24} className="mx-auto text-sikan-muted mb-3" />
+                        <p className="text-sm font-bold text-sikan-dark">No exercises tracked yet.</p>
+                        <p className="text-xs text-sikan-muted mt-1 font-semibold">Complete workouts to see progress charts.</p>
                     </div>
                 )}
             </section>
