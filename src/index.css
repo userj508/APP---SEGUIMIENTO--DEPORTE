@@ -3,26 +3,20 @@
 @import "tailwindcss";
 
 @theme {
-  --color-slate-50: #f8fafc;
-  --color-slate-100: #f1f5f9;
-  --color-slate-200: #e2e8f0;
-  --color-slate-300: #cbd5e1;
-  --color-slate-400: #94a3b8;
-  --color-slate-500: #64748b;
-  --color-slate-600: #475569;
-  --color-slate-700: #334155;
-  --color-slate-800: #1e293b;
-  --color-slate-900: #0f172a;
-  --color-slate-950: #020617;
+  --color-sikan-bg: #F8F6F2;
+  --color-sikan-cream: #F8F6F2;
+  --color-sikan-card: #FFFFFF;
+  --color-sikan-dark: #2A3631;
+  --color-sikan-green: #2A3631;
+  --color-sikan-olive: #3D4A41;
+  --color-sikan-gold: #C0A06B;
+  --color-sikan-gold-light: #D4B98E;
+  --color-sikan-muted: #8E9991;
+  --color-sikan-border: #E8E4DB;
 
-  --color-primary: #0f172a;
-  --color-primary-foreground: #ffffff;
-
-  --color-secondary: #64748b;
-  --color-secondary-foreground: #ffffff;
-
-  --color-accent: #f1f5f9;
-  --color-accent-foreground: #0f172a;
+  --color-emerald-500: #C0A06B;
+  /* Overriding emerald with gold for quick progress bar fixes */
+  --color-emerald-400: #D4B98E;
 
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-serif: 'Playfair Display', Georgia, serif;
@@ -31,6 +25,6 @@
 @layer base {
   body {
     font-family: var(--font-sans);
-    @apply bg-slate-950 text-white antialiased;
+    @apply bg-sikan-bg text-sikan-dark antialiased;
   }
 }

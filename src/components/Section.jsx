@@ -6,7 +6,7 @@ const Section = ({ children, className, title, action }) => {
         <section className={clsx("mb-8", className)}>
             {(title || action) && (
                 <div className="flex justify-between items-end mb-4 px-1">
-                    {title && <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>}
+                    {title && <h3 className="text-lg font-bold text-sikan-dark tracking-tight">{title}</h3>}
                     {action}
                 </div>
             )}

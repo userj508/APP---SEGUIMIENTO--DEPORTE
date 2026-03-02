@@ -45,7 +45,7 @@ create table public.workout_exercises (
 create table public.workout_logs (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references public.profiles(id) not null,
-  workout_id uuid references public.workouts(id), -- optional, could be ad-hoc
+  workout_id uuid references public.workouts(id) on delete cascade, -- optional, could be ad-hoc
   started_at timestamp with time zone default timezone('utc'::text, now()) not null,
   completed_at timestamp with time zone,
   status text default 'in_progress', -- 'completed', 'cancelled'
@@ -68,7 +68,7 @@ create table public.exercise_logs (
 create table public.schedule (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references public.profiles(id) not null,
-  workout_id uuid references public.workouts(id) not null,
+  workout_id uuid references public.workouts(id) on delete cascade not null,
   scheduled_date date not null,
   is_completed boolean default false
 );
@@ -89,6 +89,7 @@ create policy "Users can update own profile." on profiles for update using ( aut
 -- Workouts: System workouts visible to all, User workouts only to owner
 create policy "Workouts are viewable by everyone" on workouts for select using ( true );
 create policy "Users can insert own workouts" on workouts for insert with check ( auth.uid() = user_id );
+create policy "Users can delete own workouts" on workouts for delete using ( auth.uid() = user_id );
 
 -- Logs: Private
 create policy "Users can view own logs" on workout_logs for select using ( auth.uid() = user_id );
