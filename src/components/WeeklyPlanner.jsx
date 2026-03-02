@@ -134,24 +134,24 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
                             key={i}
                             onClick={() => setSelectedDate(dateStr)}
                             className={clsx(
-                                "flex flex-col items-center justify-center flex-1 min-w-[48px] h-[80px] rounded-[20px] border transition-all relative overflow-hidden",
+                                "flex flex-col items-center justify-center flex-1 min-w-[48px] h-[80px] rounded-[20px] transition-all relative overflow-hidden",
                                 isSelected
-                                    ? "bg-white border-white text-slate-950 shadow-lg shadow-white/10"
-                                    : "bg-slate-900 border-white/5 text-slate-500 hover:bg-slate-800",
-                                isToday && !isSelected && "border-slate-500"
+                                    ? "bg-sikan-olive text-sikan-bg shadow-md border border-sikan-olive"
+                                    : "bg-sikan-card border border-sikan-border text-sikan-muted hover:bg-[#EAE4DC]/50",
+                                isToday && !isSelected && "border-sikan-olive/40 bg-sikan-olive/5"
                             )}
                         >
-                            <span className={clsx("text-[10px] font-bold uppercase mb-1 tracking-wider", isSelected ? "text-slate-600" : "text-slate-500")}>
+                            <span className={clsx("text-[10px] font-bold uppercase mb-1 tracking-wider", isSelected ? "text-sikan-gold-light" : "text-sikan-muted")}>
                                 {d.toLocaleDateString('en-US', { weekday: 'short' })}
                             </span>
-                            <span className={clsx("text-lg font-bold", isSelected ? "text-slate-950" : "text-slate-300")}>
+                            <span className={clsx("text-lg font-bold font-serif", isSelected ? "text-sikan-bg" : "text-sikan-dark")}>
                                 {d.getDate()}
                             </span>
 
                             {/* Status Indicators */}
                             <div className="mt-1 h-1 flex justify-center gap-1 w-full relative">
-                                {isRest && <div className={clsx("w-1.5 h-1.5 rounded-full", isSelected ? "bg-orange-500" : "bg-orange-500/50")}></div>}
-                                {!isRest && hasItems && <div className={clsx("w-1.5 h-1.5 rounded-full", isSelected ? "bg-emerald-500" : "bg-emerald-500/50")}></div>}
+                                {isRest && <div className={clsx("w-1.5 h-1.5 rounded-full", isSelected ? "bg-orange-400" : "bg-orange-500/50")}></div>}
+                                {!isRest && hasItems && <div className={clsx("w-1.5 h-1.5 rounded-full", isSelected ? "bg-sikan-gold" : "bg-sikan-gold/50")}></div>}
                             </div>
                         </button>
                     );
@@ -159,11 +159,11 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
             </div>
 
             {/* Daily View Timeline */}
-            <div className="bg-slate-900 border border-white/5 rounded-[24px] p-5 relative overflow-hidden">
+            <div className="bg-sikan-card border border-sikan-border rounded-[24px] p-5 relative overflow-hidden shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h3 className="font-bold text-lg text-white">Timeline</h3>
-                        <p className="text-xs text-slate-400">
+                        <h3 className="font-bold font-serif text-lg text-sikan-dark">Timeline</h3>
+                        <p className="text-[11px] font-bold text-sikan-muted uppercase tracking-widest">
                             {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                         </p>
                     </div>
@@ -172,8 +172,8 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
                         className={clsx(
                             "flex items-center gap-2 px-4 py-2 rounded-[14px] text-xs font-bold transition-all border",
                             selectedConfig.is_rest_day
-                                ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                                : "bg-slate-950 text-slate-400 border-white/5 hover:bg-slate-800"
+                                ? "bg-orange-50 text-orange-500 border-orange-200"
+                                : "bg-sikan-bg text-sikan-muted border-sikan-border hover:bg-sikan-border hover:text-sikan-dark"
                         )}
                     >
                         <Coffee size={14} />
@@ -183,23 +183,23 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
 
                 {selectedConfig.is_rest_day ? (
                     <div className="py-12 flex flex-col items-center justify-center text-center">
-                        <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 mb-4 border border-orange-500/20 shadow-inner">
+                        <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 mb-4 border border-orange-100 shadow-inner">
                             <Coffee size={24} />
                         </div>
-                        <h4 className="text-white font-bold text-lg mb-1">Rest & Recovery</h4>
-                        <p className="text-xs text-slate-400 max-w-[200px]">Take this time to recharge your muscles and mind.</p>
+                        <h4 className="text-sikan-dark font-serif font-bold text-lg mb-1">Rest & Recovery</h4>
+                        <p className="text-xs font-semibold text-sikan-muted max-w-[200px]">Take this time to recharge your muscles and mind.</p>
                     </div>
                 ) : (
                     <div className="relative pl-14 pb-10">
                         {/* Grid Lines + Interactive Areas (Dictates timeline height) */}
-                        <div className="flex flex-col w-full z-0">
+                        <div className="flex flex-col w-full z-0 mt-2">
                             {hours.map(hour => (
                                 <div
                                     key={hour}
                                     onClick={() => onScheduleRequest && onScheduleRequest(selectedDate, `${hour.toString().padStart(2, '0')}:00`)}
-                                    className="h-20 shrink-0 border-t border-white/5 w-full relative hover:bg-white/5 transition-colors cursor-crosshair"
+                                    className="h-20 shrink-0 border-t border-sikan-border w-full relative hover:bg-sikan-bg/50 transition-colors cursor-crosshair"
                                 >
-                                    <span className="absolute -left-12 -top-2.5 text-[10px] font-bold text-slate-500 w-10 text-right pointer-events-none">
+                                    <span className="absolute -left-12 -top-2 text-[10px] font-bold text-sikan-muted w-10 text-right pointer-events-none">
                                         {hour}:00
                                     </span>
                                 </div>
@@ -250,9 +250,9 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
                                         <div
                                             key={item.id}
                                             onClick={() => navigate(`/workout/${item.workouts?.id}`)}
-                                            className="absolute right-4 rounded-[16px] bg-emerald-500/10 border border-emerald-500/20 p-3 hover:bg-emerald-500/20 transition-all cursor-pointer group flex flex-col backdrop-blur-md shadow-lg pointer-events-auto"
+                                            className="absolute right-4 rounded-[16px] bg-[#F2EDE4] border border-[#E3C7A1]/40 p-3 hover:bg-sikan-gold/20 transition-all cursor-pointer group flex flex-col shadow-sm pointer-events-auto"
                                             style={{
-                                                top: `${item.topOffset}px`,
+                                                top: `${item.topOffset + 8}px`, // +8 for the mt-2 offset we added above
                                                 height: `${item.heightPx}px`,
                                                 minHeight: '40px',
                                                 left: `${leftOffset}px`,
@@ -260,18 +260,18 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
                                             }}
                                         >
                                             <div className="flex justify-between items-start">
-                                                <h4 className="text-emerald-400 font-bold text-sm leading-tight group-hover:text-emerald-300 transition-colors truncate pr-2">
+                                                <h4 className="text-sikan-olive font-bold text-sm leading-tight group-hover:text-sikan-dark transition-colors truncate pr-2">
                                                     {item.workouts?.title}
                                                 </h4>
                                                 <button
                                                     onClick={(e) => handleDeleteSchedule(item.id, e)}
-                                                    className="text-emerald-500/50 hover:text-rose-400 transition-colors bg-black/20 rounded-full p-1 opacity-0 group-hover:opacity-100 shrink-0"
+                                                    className="text-sikan-muted hover:text-rose-500 bg-sikan-card/50 transition-colors rounded-full p-1 opacity-0 group-hover:opacity-100 shrink-0 shadow-sm border border-sikan-border/50"
                                                 >
                                                     <Trash2 size={12} />
                                                 </button>
                                             </div>
                                             {item.heightPx >= 60 && (
-                                                <div className="text-[10px] font-semibold text-emerald-500/70 flex items-center gap-1 mt-1">
+                                                <div className="text-[10px] font-bold text-[#A47146] flex items-center gap-1 mt-1">
                                                     <Clock size={10} />
                                                     {item.startH}:{item.startM === 0 ? '00' : item.startM.toString().padStart(2, '0')} ({item.workouts?.duration_minutes || 45}m)
                                                 </div>

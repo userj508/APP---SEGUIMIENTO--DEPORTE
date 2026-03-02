@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase';
 import CreateWorkoutModal from '../components/CreateWorkoutModal';
 import DayScheduleModal from '../components/DayScheduleModal';
 
-import SikanLogo from '../components/SikanLogo';
+
 
 const Home = () => {
     const { user } = useAuth();
@@ -120,7 +120,7 @@ const Home = () => {
                 <button className="text-sikan-dark">
                     <Menu size={24} strokeWidth={1.5} />
                 </button>
-                <SikanLogo className="w-8 h-8 text-sikan-gold drop-shadow-sm" fill="currentColor" />
+                <img src="/logo.jpg" alt="SIKAN Logo" className="w-16 h-auto drop-shadow-sm mix-blend-multiply" />
                 <button className="relative text-sikan-dark">
                     <Bell size={24} strokeWidth={1.5} />
                     <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full border border-sikan-bg"></span>

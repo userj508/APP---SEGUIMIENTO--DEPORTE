@@ -29,32 +29,32 @@ const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedul
     return (
         <div
             onClick={onClick}
-            className="bg-slate-900 border border-white/5 rounded-[20px] p-5 hover:bg-slate-800/80 transition-all group flex flex-col cursor-pointer"
+            className="bg-sikan-card border border-sikan-border rounded-[20px] p-5 hover:shadow-md transition-all group flex flex-col cursor-pointer"
         >
             <div className="flex justify-between items-start mb-4 relative">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950 border border-white/5 text-[10px] font-bold uppercase tracking-wider text-slate-300">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sikan-bg border border-sikan-border text-[10px] font-bold uppercase tracking-wider text-sikan-olive">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sikan-gold"></span>
                     {type || 'Strength'}
                 </div>
                 {onDelete && (
                     <div className="relative">
                         <button
                             onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-                            className="text-slate-500 hover:text-white p-1 rounded-full transition-colors"
+                            className="text-sikan-muted hover:text-sikan-dark p-1 rounded-full transition-colors"
                         >
                             <MoreHorizontal size={18} />
                         </button>
                         {showMenu && (
                             <>
                                 <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }}></div>
-                                <div className="absolute right-0 top-full mt-1 w-32 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
+                                <div className="absolute right-0 top-full mt-1 w-32 bg-sikan-card border border-sikan-border rounded-xl shadow-lg z-50 overflow-hidden">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setShowMenu(false);
                                             onDelete();
                                         }}
-                                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-slate-700/50 transition-colors flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-50 transition-colors flex items-center gap-2"
                                     >
                                         Delete
                                     </button>
@@ -64,20 +64,20 @@ const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedul
                     </div>
                 )}
                 {!onDelete && (
-                    <button className="text-slate-500 hover:text-white p-1 rounded-full transition-colors cursor-default">
+                    <button className="text-sikan-muted hover:text-sikan-dark p-1 rounded-full transition-colors cursor-default">
                         <MoreHorizontal size={18} />
                     </button>
                 )}
             </div>
 
             <div className="mb-6 flex-1">
-                <h3 className="text-white font-bold text-lg mb-1.5 leading-tight">{title}</h3>
-                <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
+                <h3 className="text-sikan-dark font-serif font-bold text-lg mb-1.5 leading-tight">{title}</h3>
+                <div className="flex items-center gap-3 text-xs text-sikan-muted font-bold tracking-wide">
                     <span className="flex items-center">
-                        <Clock size={12} className="mr-1.5 text-slate-500" />
+                        <Clock size={12} className="mr-1.5 text-sikan-olive" />
                         {duration} min
                     </span>
-                    <span className="w-1 h-1 rounded-full bg-slate-700"></span>
+                    <span className="w-1 h-1 rounded-full bg-sikan-border"></span>
                     <span className="capitalize">{level}</span>
                 </div>
             </div>
@@ -85,16 +85,16 @@ const WorkoutCard = ({ title, duration, type, level, onClick, onStart, onSchedul
             <div className="grid grid-cols-2 gap-2 mt-auto">
                 <button
                     onClick={handleSchedule}
-                    className="flex items-center justify-center gap-2 py-3 rounded-[14px] bg-slate-950 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors border border-white/5"
+                    className="flex items-center justify-center gap-2 py-3 rounded-[14px] bg-sikan-bg border border-sikan-border hover:border-sikan-olive text-sikan-dark text-xs font-bold transition-colors"
                 >
-                    <CalendarPlus size={14} />
+                    <CalendarPlus size={14} className="text-sikan-olive" />
                     Schedule
                 </button>
                 <button
                     onClick={handleStart}
-                    className="flex items-center justify-center gap-2 py-3 rounded-[14px] bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-xs font-bold transition-colors"
+                    className="flex items-center justify-center gap-2 py-3 rounded-[14px] bg-sikan-olive hover:bg-sikan-dark text-sikan-bg text-xs font-bold transition-colors shadow-sm"
                 >
-                    <Play size={14} className="fill-current" />
+                    <Play size={14} className="fill-current text-sikan-gold" />
                     Start
                 </button>
             </div>
