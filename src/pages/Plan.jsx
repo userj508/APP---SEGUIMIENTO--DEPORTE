@@ -100,7 +100,7 @@ const Plan = () => {
             </header>
 
             {/* Weekly Calendar Component */}
-            <WeeklyPlanner key={refreshTrigger} />
+            <WeeklyPlanner refreshTrigger={refreshTrigger} />
 
             {/* Core Actions */}
             <div className="grid grid-cols-2 gap-3 mb-10">

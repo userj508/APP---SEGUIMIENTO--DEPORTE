@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
-import { Coffee, Clock, Trash2 } from 'lucide-react';
+import { Coffee, Clock, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const WeeklyPlanner = ({ onScheduleRequest }) => {
+const WeeklyPlanner = ({ onScheduleRequest, refreshTrigger }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [weekDates, setWeekDates] = useState([]);
-    const [scheduleMap, setScheduleMap] = useState({}); // { '2023-11-01': [items] }
+    const [scheduleMap, setScheduleMap] = useState({});
     const [loading, setLoading] = useState(true);
+    const [weekOffset, setWeekOffset] = useState(0);
 
     // Timeline configuration
     const START_HOUR = 6;
@@ -19,10 +20,12 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
     const hours = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 
     useEffect(() => {
-        // Generate current week dates centered or starting from today
         const today = new Date();
-        const startOfWeek = new Date(today);
-        const day = today.getDay() || 7;
+        const referenceDate = new Date(today);
+        referenceDate.setDate(today.getDate() + (weekOffset * 7));
+
+        const day = referenceDate.getDay() || 7;
+        const startOfWeek = new Date(referenceDate);
         if (day !== 1) startOfWeek.setHours(-24 * (day - 1));
         else startOfWeek.setHours(0, 0, 0, 0);
 
@@ -33,7 +36,17 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
             dates.push(d);
         }
         setWeekDates(dates);
-    }, []);
+
+        // Auto-select a valid date when week changes
+        const todayStr = today.toISOString().split('T')[0];
+        const hasToday = dates.some(d => d.toISOString().split('T')[0] === todayStr);
+        
+        if (hasToday) {
+            setSelectedDate(todayStr);
+        } else {
+            setSelectedDate(dates[0].toISOString().split('T')[0]);
+        }
+    }, [weekOffset]);
 
     const fetchSchedule = async () => {
         if (!user || weekDates.length === 0) return;
@@ -80,7 +93,7 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
 
     useEffect(() => {
         fetchSchedule();
-    }, [user, weekDates]);
+    }, [user, weekDates, refreshTrigger]);
 
     const handleToggleRestDay = async () => {
         const todayConfig = scheduleMap[selectedDate];
@@ -119,6 +132,19 @@ const WeeklyPlanner = ({ onScheduleRequest }) => {
 
     return (
         <div className="flex flex-col mb-8 gap-6 animate-in fade-in duration-300">
+            {/* Week Navigation */}
+            <div className="flex justify-between items-center mb-1">
+                <button onClick={() => setWeekOffset(prev => prev - 1)} className="w-8 h-8 flex items-center justify-center rounded-full bg-sikan-card border border-sikan-border text-sikan-muted hover:text-sikan-dark transition-colors shadow-sm">
+                    <ChevronLeft size={16} />
+                </button>
+                <span className="text-sm font-bold text-sikan-dark">
+                    {weekOffset === 0 ? "This Week" : weekOffset === 1 ? "Next Week" : weekOffset === -1 ? "Last Week" : `${Math.abs(weekOffset)} Weeks ${weekOffset > 0 ? 'Ahead' : 'Ago'}`}
+                </span>
+                <button onClick={() => setWeekOffset(prev => prev + 1)} className="w-8 h-8 flex items-center justify-center rounded-full bg-sikan-card border border-sikan-border text-sikan-muted hover:text-sikan-dark transition-colors shadow-sm">
+                    <ChevronRight size={16} />
+                </button>
+            </div>
+
             {/* Horizontal Day Strip */}
             <div className="flex justify-between items-center gap-2 overflow-x-auto scrollbar-hide w-full max-w-full pb-2">
                 {weekDates.map((d, i) => {
