@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import CreateWorkoutModal from '../components/CreateWorkoutModal';
 import DayScheduleModal from '../components/DayScheduleModal';
 import CategoryScheduleModal from '../components/CategoryScheduleModal';
+import CreateGoalModal from '../components/CreateGoalModal';
 
 
 
@@ -21,9 +22,11 @@ const Home = () => {
     const [weekSchedule, setWeekSchedule] = useState([]);
     const [weekDates, setWeekDates] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showGoalModal, setShowGoalModal] = useState(false);
     const [selectedDaySchedule, setSelectedDaySchedule] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [indicators, setIndicators] = useState({ training: 0, nutrition: 0, mindfulness: 0 });
+    const [activeGoals, setActiveGoals] = useState([]);
 
     const [loading, setLoading] = useState(true);
 
@@ -152,6 +155,73 @@ const Home = () => {
                     nutrition: Math.min(Math.round((nutCount / 14) * 100), 100) || 0, // Goal: 14 meals/week
                     mindfulness: Math.min(Math.round((mindCount / 2) * 100), 100) || 0 // Goal: 2 sessions/week
                 });
+                
+                // 5. Fetch Active Goals & Calculate Progress
+                const { data: dbGoals } = await supabase
+                    .from('goals')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('status', 'active')
+                    .order('created_at', { ascending: false });
+                    
+                if (dbGoals && dbGoals.length > 0) {
+                     const computedGoals = await Promise.all(dbGoals.map(async (goal) => {
+                         let currentProgress = 0;
+                         
+                         if (goal.target_metric === 'distance_km') {
+                             // Fetch all cardio logs since goal creation
+                             const { data: cLogs } = await supabase.from('workout_logs')
+                                .select('distance_meters')
+                                .eq('user_id', user.id)
+                                .gte('started_at', goal.created_at)
+                                .not('distance_meters', 'is', null);
+                                
+                             if (cLogs) {
+                                  const totalMeters = cLogs.reduce((sum, log) => sum + (log.distance_meters || 0), 0);
+                                  currentProgress = parseFloat((totalMeters / 1000).toFixed(2));
+                             }
+                         } else {
+                             // Sessions or Volume_kg: needs matching workouts
+                             // Supabase has no direct cross table where simple queries, so we do inner join
+                             const { data: wLogs } = await supabase.from('workout_logs')
+                                .select('id, workouts!inner(goal_id)')
+                                .eq('user_id', user.id)
+                                .eq('workouts.goal_id', goal.id)
+                                .eq('status', 'completed')
+                                .gte('completed_at', goal.created_at);
+                                
+                             if (wLogs) {
+                                  if (goal.target_metric === 'sessions') {
+                                       currentProgress = wLogs.length;
+                                  } else if (goal.target_metric === 'volume_kg') {
+                                       // we would need exercise_logs, which is expensive to load all.
+                                       // For MVP, we query exercise logs for these workout ids
+                                       const logIds = wLogs.map(l => l.id);
+                                       if (logIds.length > 0) {
+                                            const { data: exLogs } = await supabase.from('exercise_logs')
+                                                .select('weight_kg, reps_completed')
+                                                .in('workout_log_id', logIds)
+                                                .eq('is_completed', true);
+                                                
+                                            if (exLogs) {
+                                                currentProgress = exLogs.reduce((sum, el) => sum + ((parseFloat(el.weight_kg)||0) * (parseFloat(el.reps_completed)||0)), 0);
+                                            }
+                                       }
+                                  }
+                             }
+                         }
+                         
+                         // Cap at 100% just for display progress, but keep real value
+                         return {
+                             ...goal,
+                             currentProgress,
+                             percent: Math.min((currentProgress / goal.target_value) * 100, 100)
+                         };
+                     }));
+                     setActiveGoals(computedGoals);
+                } else {
+                     setActiveGoals([]);
+                }
 
             } catch (error) {
                 console.error("Error fetching home data:", error);
@@ -253,44 +323,51 @@ const Home = () => {
                 </div>
             </div>
 
-            {/* Weekly Goals */}
+            {/* Active Goals */}
             <div>
                 <div className="flex justify-between items-end mb-5">
-                    <h3 className="text-lg font-bold text-sikan-dark">Weekly Goals</h3>
-                    <button className="text-xs font-semibold text-sikan-muted hover:text-sikan-dark uppercase tracking-wider">See all</button>
+                    <h3 className="text-lg font-bold text-sikan-dark leading-none">Active Targets</h3>
+                    <div className="flex items-center gap-3">
+                        <button className="text-xs font-semibold text-sikan-muted hover:text-sikan-dark uppercase tracking-wider">See all</button>
+                        <button onClick={() => setShowGoalModal(true)} className="w-6 h-6 rounded-full bg-sikan-olive text-sikan-cream flex items-center justify-center shadow-md shadow-sikan-olive/30 hover:scale-105 active:scale-95 transition-all">
+                            <Plus size={16} strokeWidth={3} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-5">
-                    {/* Goal 1 */}
-                    <div>
-                        <div className="flex justify-between text-sm mb-2">
-                            <span className="font-medium text-sikan-dark">Target Target</span>
-                            <span className="font-bold text-sikan-dark">100%</span>
+                    {activeGoals.length > 0 ? (
+                        activeGoals.map(goal => (
+                            <div key={goal.id} className="bg-sikan-card/50 p-4 rounded-[20px] border border-sikan-border shadow-sm">
+                                <div className="flex justify-between text-sm mb-2 items-end">
+                                    <div>
+                                        <span className="font-bold text-sikan-dark block">{goal.title}</span>
+                                        <span className="text-[10px] font-bold text-sikan-muted uppercase tracking-wider block mt-0.5">
+                                            {goal.currentProgress} / {goal.target_value} {goal.target_metric === 'distance_km' ? 'km' : goal.target_metric === 'sessions' ? 'sessions' : 'kg'}
+                                        </span>
+                                    </div>
+                                    <span className="font-bold font-serif text-sikan-olive text-lg leading-none">{Math.round(goal.percent)}%</span>
+                                </div>
+                                <div className="w-full bg-[#EAE4DC] h-2.5 rounded-full overflow-hidden shadow-inner">
+                                    <div 
+                                        className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.target_metric === 'distance_km' ? 'bg-[#4A7243]' : goal.target_metric === 'sessions' ? 'bg-sikan-olive' : 'bg-[#896f5b]'}`}
+                                        style={{ width: `${goal.percent}%` }}
+                                    ></div>
+                                </div>
+                                {goal.deadline && (
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-[#A47146] mt-3 text-right">
+                                        Deadline: {new Date(goal.deadline).toLocaleDateString()}
+                                    </p>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-10 px-6 bg-sikan-card border border-sikan-border border-dashed rounded-[24px]">
+                            <Target size={24} className="mx-auto text-sikan-muted mb-3" />
+                            <p className="text-sm font-bold text-sikan-dark">No active targets set.</p>
+                            <p className="text-xs text-sikan-muted mt-1 font-semibold">Click the + button to create a new goal.</p>
                         </div>
-                        <div className="w-full bg-sikan-border h-2 rounded-full overflow-hidden">
-                            <div className="h-full bg-sikan-olive rounded-full w-full"></div>
-                        </div>
-                    </div>
-                    {/* Goal 2 */}
-                    <div>
-                        <div className="flex justify-between text-sm mb-2">
-                            <span className="font-medium text-sikan-dark">Evenn Target</span>
-                            <span className="font-bold text-sikan-dark">70%</span>
-                        </div>
-                        <div className="w-full bg-sikan-border h-2 rounded-full overflow-hidden">
-                            <div className="h-full bg-sikan-muted rounded-full w-[70%]"></div>
-                        </div>
-                    </div>
-                    {/* Goal 3 */}
-                    <div>
-                        <div className="flex justify-between text-sm mb-2">
-                            <span className="font-medium text-sikan-dark">Connnonmy Target</span>
-                            <span className="font-bold text-sikan-dark">60%</span>
-                        </div>
-                        <div className="w-full bg-sikan-border h-2 rounded-full overflow-hidden">
-                            <div className="h-full bg-sikan-muted rounded-full w-[60%]"></div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -298,6 +375,16 @@ const Home = () => {
                 <CreateWorkoutModal
                     onClose={() => setShowCreateModal(false)}
                     onWorkoutCreated={handleWorkoutCreated}
+                />
+            )}
+
+            {showGoalModal && (
+                <CreateGoalModal
+                    onClose={() => setShowGoalModal(false)}
+                    onGoalCreated={(newGoal) => {
+                        // Optimistically ad
+                        setActiveGoals([{...newGoal, currentProgress: 0, percent: 0}, ...activeGoals])
+                    }}
                 />
             )}
 

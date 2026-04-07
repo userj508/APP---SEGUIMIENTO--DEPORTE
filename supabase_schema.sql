@@ -125,3 +125,24 @@ INSERT INTO public.exercises (name, category) VALUES
 ('Dumbbell Lunge', 'Legs'),
 ('Plank', 'Core'),
 ('Push Up', 'Chest');
+
+-- 8. GOALS (Targets)
+create table public.goals (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.profiles(id) not null,
+  title text not null,
+  target_metric text not null check (target_metric in ('distance_km', 'sessions', 'volume_kg')),
+  target_value numeric not null,
+  deadline date,
+  status text default 'active',
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.workouts add column goal_id uuid references public.goals(id) on delete set null;
+
+alter table public.goals enable row level security;
+create policy "Users can view own goals" on goals for select using ( auth.uid() = user_id );
+create policy "Users can insert own goals" on goals for insert with check ( auth.uid() = user_id );
+create policy "Users can update own goals" on goals for update using ( auth.uid() = user_id );
+create policy "Users can delete own goals" on goals for delete using ( auth.uid() = user_id );
+

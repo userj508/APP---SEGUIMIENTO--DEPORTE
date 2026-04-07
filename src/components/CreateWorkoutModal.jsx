@@ -11,6 +11,8 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
     const [type, setType] = useState('Strength');
     const [duration, setDuration] = useState(45);
     const [difficulty, setDifficulty] = useState('Intermediate');
+    const [activeGoals, setActiveGoals] = useState([]);
+    const [selectedGoalId, setSelectedGoalId] = useState('');
 
     // Exercise Selection State
     const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +45,20 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
         const timeoutId = setTimeout(searchExercises, 300);
         return () => clearTimeout(timeoutId);
     }, [searchQuery]);
+
+    // Fetch Active Goals for Assignment
+    useEffect(() => {
+        if (!user) return;
+        const fetchGoals = async () => {
+            const { data } = await supabase
+                .from('goals')
+                .select('id, title')
+                .eq('user_id', user.id)
+                .eq('status', 'active');
+            setActiveGoals(data || []);
+        };
+        fetchGoals();
+    }, [user]);
 
     const addExercise = (exercise) => {
         if (!selectedExercises.some(e => e.id === exercise.id)) {
@@ -86,7 +102,8 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
                     description,
                     type,
                     duration_minutes: duration,
-                    difficulty
+                    difficulty,
+                    goal_id: selectedGoalId || null
                 })
                 .select()
                 .single();
@@ -192,6 +209,23 @@ const CreateWorkoutModal = ({ onClose, onWorkoutCreated }) => {
                                 </div>
                             </div>
                         </div>
+
+                        {activeGoals.length > 0 && (
+                            <div>
+                                <label className="block text-[10px] font-bold text-sikan-muted tracking-widest uppercase mb-2">Assign to Target</label>
+                                <select
+                                    value={selectedGoalId}
+                                    onChange={(e) => setSelectedGoalId(e.target.value)}
+                                    className="w-full bg-sikan-card border border-sikan-border rounded-[16px] px-5 py-4 text-sm font-bold text-sikan-dark focus:border-[#896f5b]/30 focus:shadow-md outline-none transition-all appearance-none"
+                                >
+                                    <option value="">None / Do not assign</option>
+                                    {activeGoals.map(g => (
+                                        <option key={g.id} value={g.id}>{g.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
 
                         {isCardio ? (
                             <div className="bg-sikan-olive/10 border border-sikan-olive/30 rounded-[16px] p-5 text-center">
