@@ -179,18 +179,59 @@ const Dashboard = () => {
                 drillDownData.forEach(d => { d.distance = parseFloat(d.distance.toFixed(2)); });
 
                 // 5. Generate Weekly Consistency Data (Last 7 Days)
+                const last7DaysStart = new Date();
+                last7DaysStart.setDate(last7DaysStart.getDate() - 6);
+                last7DaysStart.setHours(0,0,0,0);
+
+                const { data: scheduledSessions } = await supabase
+                    .from('schedule')
+                    .select('*, workouts(title)')
+                    .eq('user_id', user.id)
+                    .gte('scheduled_date', last7DaysStart.toISOString().split('T')[0]);
+
                 const weekDays = [];
                 const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
                 for (let i = 6; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    const dateStr = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+                    const checkDate = new Date();
+                    checkDate.setDate(checkDate.getDate() - i);
+                    const dateStr = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
+                    
+                    // Supabase 'date' type format YYYY-MM-DD
+                    const mm = String(checkDate.getMonth() + 1).padStart(2, '0');
+                    const dd = String(checkDate.getDate()).padStart(2, '0');
+                    const isoDateStr = `${checkDate.getFullYear()}-${mm}-${dd}`;
+
+                    const dayLogs = safeLogs.filter(log => {
+                        const d = new Date(log.completed_at || log.started_at);
+                        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` === dateStr;
+                    });
+                    
+                    const daySchedules = scheduledSessions?.filter(s => s.scheduled_date === isoDateStr) || [];
+                    
+                    const isCompleted = dayLogs.length > 0;
+                    const isPlanned = daySchedules.length > 0;
+                    // Because schedules lack timezone granularity, consider missed if today has passed or if it's a past day
+                    const isMissed = isPlanned && !daySchedules.some(s => s.is_completed) && i > 0 && !isCompleted;
+                    
+                    let status = "none";
+                    if (isCompleted) status = "completed";
+                    else if (isMissed) status = "missed";
+                    else if (isPlanned) status = "planned"; // Usually for today
+
+                    let displayTitle = "";
+                    if (isCompleted) {
+                         const titles = dayLogs.map(l => l.workouts?.title || (l.distance_meters ? 'Cardio' : 'Custom Session'));
+                         displayTitle = titles[0];
+                         if (dayLogs.length > 1) displayTitle += " +1";
+                    } else if (isPlanned || isMissed) {
+                         displayTitle = daySchedules[0]?.workouts?.title || "Planned";
+                    }
 
                     weekDays.push({
-                        day: dayNames[date.getDay()],
-                        active: activeDates.has(dateStr),
-                        height: activeDates.has(dateStr) ? 'h-12' : 'h-1.5' // Simple binary height for now
+                        day: dayNames[checkDate.getDay()],
+                        status: status,
+                        title: displayTitle
                     });
                 }
 
@@ -310,25 +351,40 @@ const Dashboard = () => {
                 </button>
             </header>
 
-            {/* Weekly Consistency */}
-            <section className="mb-8">
-                <div className="flex justify-between items-end mb-4">
+            {/* Consistency */}
+            <section className="mb-10">
+                <div className="flex justify-between items-center mb-5">
                     <h2 className="text-lg font-serif font-bold text-sikan-dark">Consistency</h2>
-                    <span className="text-xs font-bold text-sikan-olive">
-                        {stats.currentStreak > 0 ? `${stats.currentStreak} Day Streak!` : 'Keep going!'}
-                    </span>
+                    <span className="text-xs font-bold text-sikan-olive px-3 py-1 bg-sikan-olive/10 rounded-full">Last 7 Days</span>
                 </div>
-                <div className="bg-sikan-card p-6 rounded-[24px] border border-sikan-border shadow-sm relative overflow-hidden">
-                    <div className="flex justify-between items-end h-28 mb-1 relative z-10 w-full px-2">
-                        {stats.weeklyData.map((day, index) => (
-                            <div key={index} className="flex flex-col items-center group w-full relative">
-                                <div
-                                    className={`w-2 transition-all duration-700 ease-out rounded-full ${day.active ? 'bg-sikan-olive group-hover:bg-sikan-dark' : 'bg-[#EAE4DC] group-hover:bg-[#E3C7A1]'} ${day.height}`}
-                                ></div>
-                                <span className="text-[10px] text-sikan-muted font-bold uppercase mt-4 tracking-wider">{day.day}</span>
+                
+                <div className="flex gap-2 w-full overflow-x-auto pb-4 hide-scrollbar snap-x px-1">
+                    {stats.weeklyData.map((day, index) => (
+                        <div key={index} className={`shrink-0 w-[4.8rem] h-[6rem] p-3 rounded-[20px] flex flex-col items-center justify-between border snap-center transition-transform hover:scale-105 ${
+                            day.status === 'completed' ? 'bg-sikan-olive text-sikan-cream border-sikan-olive shadow-sm' :
+                            day.status === 'missed' ? 'bg-[#FAF8F5] text-red-500 border-red-200 border-dashed opacity-80' :
+                            day.status === 'planned' ? 'bg-[#FAF8F5] text-sikan-gold border-sikan-gold border-dashed shadow-sm' :
+                            'bg-[#FAF8F5] text-sikan-muted border-sikan-border'
+                        }`}>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${day.status === 'completed' || day.status === 'planned' ? 'opacity-90' : 'opacity-50'}`}>{day.day}</span>
+                            
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center -my-2 ${
+                                day.status === 'completed' ? 'bg-white/20' : 
+                                day.status === 'planned' ? 'bg-sikan-gold/10' : ''
+                            }`}>
+                                {day.status === 'completed' ? <Activity size={14} strokeWidth={2.5} /> :
+                                 day.status === 'missed' ? <X size={14} strokeWidth={2.5} className="text-red-400 opacity-60" /> :
+                                 day.status === 'planned' ? <Calendar size={14} strokeWidth={2.5} className="text-sikan-gold" /> :
+                                 <div className="w-1.5 h-1.5 rounded-full bg-sikan-border" />}
                             </div>
-                        ))}
-                    </div>
+                            
+                            {day.title ? (
+                                 <span className={`text-[9px] font-bold text-center leading-tight truncate w-full ${day.status === 'missed' ? 'line-through opacity-60' : ''}`}>{day.title}</span>
+                            ) : (
+                                 <span className="text-[9px] font-bold text-center opacity-40">-</span>
+                            )}
+                        </div>
+                    ))}
                 </div>
             </section>
 
