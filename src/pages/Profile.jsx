@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { User, LogOut, Award, Calendar, Activity, Settings, ChevronRight, Loader2, Zap, HeartPulse, Flame, RefreshCcw, Save } from 'lucide-react';
+import { User, LogOut, Award, Calendar, Activity, Settings, ChevronRight, Loader2, Zap, HeartPulse, Flame, RefreshCcw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { syncStravaActivities } from '../lib/strava';
+import { syncStravaActivities, exchangeStravaToken } from '../lib/strava';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 
@@ -17,8 +17,6 @@ const Profile = () => {
     });
     const [profile, setProfile] = useState(null);
     const [isSyncingStrava, setIsSyncingStrava] = useState(false);
-    const [showStravaTokens, setShowStravaTokens] = useState(false);
-    const [stravaTokensForm, setStravaTokensForm] = useState({ access: '', refresh: '' });
 
     // Mock Heatmap Data
     const generateHeatmap = () => {
@@ -100,6 +98,39 @@ const Profile = () => {
         fetchData();
     }, [user]);
 
+    // Handle OAuth Callback
+    useEffect(() => {
+        if (!user) return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+            setIsSyncingStrava(true);
+            exchangeStravaToken(user.id, code)
+                .then((tokens) => {
+                    setProfile(p => ({ ...p, strava_access_token: tokens.access, strava_refresh_token: tokens.refresh }));
+                    // Clean URL
+                    window.history.replaceState({}, document.title, "/profile");
+                    
+                    // Immediately try to sync since we just connected!
+                    return syncStravaActivities(user.id, tokens.access, tokens.refresh);
+                })
+                .then(count => {
+                    if (count !== undefined) {
+                        alert(`Strava vinculado exitosamente y ${count} actividades sincronizadas.`);
+                        window.location.reload();
+                    }
+                })
+                .catch(err => {
+                    console.error("Error exchanging strava code", err);
+                    alert("Error al vincular Strava. Vuelve a intentarlo.");
+                })
+                .finally(() => {
+                    setIsSyncingStrava(false);
+                });
+        }
+    }, [user]);
+
     const handleSignOut = async () => {
         try {
             await signOut();
@@ -111,7 +142,8 @@ const Profile = () => {
 
     const handleStravaSync = async () => {
         if (!profile?.strava_access_token) {
-            setShowStravaTokens(true);
+            const redirectUri = encodeURIComponent(window.location.origin + '/profile');
+            window.location.href = `https://www.strava.com/oauth/authorize?client_id=222057&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=activity:read_all`;
             return;
         }
 
@@ -122,24 +154,11 @@ const Profile = () => {
             // Refresh stats by just remounting profile logic (we could trigger a reload)
             window.location.reload();
         } catch (error) {
-            console.error("Strava Sync Error");
-            alert("Error al sincronizar Strava. Comprueba tus conectores.");
+            console.error("Strava Sync Error", error);
+            alert("Tu token ha caducado o no tienes permisos de lectura activa. Vuelve a conectar Strava.");
+            setProfile(p => ({ ...p, strava_access_token: null })); // Re-prompt auth
         } finally {
             setIsSyncingStrava(false);
-        }
-    };
-
-    const handleSaveStravaTokens = async () => {
-        try {
-            await supabase.from('profiles').update({
-                strava_access_token: stravaTokensForm.access,
-                strava_refresh_token: stravaTokensForm.refresh
-            }).eq('id', user.id);
-            setProfile(p => ({ ...p, strava_access_token: stravaTokensForm.access, strava_refresh_token: stravaTokensForm.refresh }));
-            setShowStravaTokens(false);
-            alert("Tokens guardados. Ahora puedes sincronizar.");
-        } catch (e) {
-            console.error("Error saving tokens");
         }
     };
 
@@ -243,29 +262,6 @@ const Profile = () => {
                         </div>
                     </div>
                 </button>
-
-                {showStravaTokens && (
-                    <div className="bg-sikan-card border border-sikan-border rounded-xl p-5 shadow-inner animate-in slide-in-from-top-2 duration-300">
-                        <h4 className="text-xs font-bold text-sikan-dark uppercase tracking-widest mb-3">Vincular Tokens Strava</h4>
-                        <input
-                            type="text"
-                            placeholder="Access Token"
-                            value={stravaTokensForm.access}
-                            onChange={(e) => setStravaTokensForm({ ...stravaTokensForm, access: e.target.value })}
-                            className="w-full mb-2 bg-sikan-bg border border-sikan-border rounded-lg py-2 px-3 text-xs focus:border-sikan-olive outline-none text-sikan-dark font-mono"
-                        />
-                        <input
-                            type="text"
-                            placeholder="Refresh Token"
-                            value={stravaTokensForm.refresh}
-                            onChange={(e) => setStravaTokensForm({ ...stravaTokensForm, refresh: e.target.value })}
-                            className="w-full mb-3 bg-sikan-bg border border-sikan-border rounded-lg py-2 px-3 text-xs focus:border-sikan-olive outline-none text-sikan-dark font-mono"
-                        />
-                        <button onClick={handleSaveStravaTokens} className="bg-sikan-olive hover:bg-[#8A9A5B] text-sikan-bg w-full py-2.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm">
-                            <Save size={14} /> Guardar Tokens
-                        </button>
-                    </div>
-                )}
 
                 <button
                     onClick={handleSignOut}

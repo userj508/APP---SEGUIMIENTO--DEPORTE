@@ -38,6 +38,42 @@ export const refreshStravaToken = async (userId, refreshToken) => {
 };
 
 /**
+ * Exchanges a one-time authorization code for Strava Access and Refresh tokens
+ */
+export const exchangeStravaToken = async (userId, code) => {
+    try {
+        const response = await fetch('https://www.strava.com/oauth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                code: code,
+                grant_type: 'authorization_code'
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to exchange Strava token');
+
+        const data = await response.json();
+        
+        // Update DB with new tokens
+        await supabase.from('profiles').update({
+            strava_access_token: data.access_token,
+            strava_refresh_token: data.refresh_token
+        }).eq('id', userId);
+
+        return {
+            access: data.access_token,
+            refresh: data.refresh_token
+        };
+    } catch (error) {
+        console.error("Error exchanging Strava code:", error);
+        throw error;
+    }
+};
+
+/**
  * Syncs recent Strava activities to Supabase workout_logs.
  */
 export const syncStravaActivities = async (userId, accessToken, refreshToken) => {
