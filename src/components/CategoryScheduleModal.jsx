@@ -90,17 +90,21 @@ const CategoryScheduleModal = ({ category, weekSchedule, onClose }) => {
                                     {/* Details */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start mb-1">
-                                            <h4 className={`font-bold text-md leading-tight truncate ${item.is_completed ? 'text-sikan-muted line-through' : 'text-sikan-dark'}`}>
-                                                {item.workouts?.title || "Session"}
+                                            <h4 className={`font-bold text-md leading-tight truncate ${item.is_completed ? 'text-sikan-muted line-through' : item.is_strava ? 'text-[#FC5200]' : 'text-sikan-dark'}`}>
+                                                {item.workouts?.title || "Session"} {item.is_strava && "🏃"}
                                             </h4>
                                         </div>
                                         <div className="flex items-center gap-2 text-xs font-bold text-sikan-muted mt-1">
-                                            {item.workouts?.duration_minutes && (
+                                            {item.is_strava ? (
+                                                <div className="flex items-center gap-1 shrink-0 text-[#FC5200]/80">
+                                                    <span>{(item.distance_meters / 1000).toFixed(2)} km</span>
+                                                </div>
+                                            ) : item.workouts?.duration_minutes ? (
                                                 <div className="flex items-center gap-1 shrink-0">
                                                     <Clock size={12} className="text-sikan-olive" />
                                                     {item.workouts.duration_minutes}m
                                                 </div>
-                                            )}
+                                            ) : null}
                                             <span className="w-1 h-1 rounded-full bg-sikan-border shrink-0"></span>
                                             <span className="uppercase tracking-wider text-[10px] truncate">{item.workouts?.type || category}</span>
                                         </div>

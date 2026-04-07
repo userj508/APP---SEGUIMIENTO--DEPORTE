@@ -90,14 +90,45 @@ const Home = () => {
                 const startDateStr = dates[0].toISOString().split('T')[0];
                 const endDateStr = dates[6].toISOString().split('T')[0];
 
-                const { data: weekData } = await supabase
-                    .from('schedule')
-                    .select('*, workouts(*)')
-                    .eq('user_id', user.id)
-                    .gte('scheduled_date', startDateStr)
-                    .lte('scheduled_date', endDateStr);
+                const [scheduleRes, logsRes] = await Promise.all([
+                    supabase
+                        .from('schedule')
+                        .select('*, workouts(*)')
+                        .eq('user_id', user.id)
+                        .gte('scheduled_date', startDateStr)
+                        .lte('scheduled_date', endDateStr),
+                    supabase
+                        .from('workout_logs')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .gte('started_at', `${startDateStr}T00:00:00.000Z`)
+                        .lte('started_at', `${endDateStr}T23:59:59.999Z`)
+                        .not('strava_activity_id', 'is', null)
+                ]);
 
-                setWeekSchedule(weekData || []);
+                let mergedSchedule = scheduleRes.data ? [...scheduleRes.data] : [];
+                
+                logsRes.data?.forEach(log => {
+                    const dateStr = log.started_at.split('T')[0];
+                    const timeStr = log.started_at.split('T')[1].substring(0, 5);
+                    mergedSchedule.push({
+                        id: log.id,
+                        scheduled_date: dateStr,
+                        scheduled_time: `${timeStr}:00`,
+                        is_rest_day: false,
+                        is_strava: true,
+                        workouts: {
+                            id: log.id,
+                            title: log.external_title || 'Cardio Activity',
+                            type: 'Cardio',
+                            duration_minutes: Math.round(log.moving_time_seconds / 60)
+                        },
+                        distance_meters: log.distance_meters,
+                        activity_type: log.activity_type
+                    });
+                });
+
+                setWeekSchedule(mergedSchedule);
                 setWeekDates(dates);
 
                 // 4. Calculate Analytics Indicators from Completed Logs

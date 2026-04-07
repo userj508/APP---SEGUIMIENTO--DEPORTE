@@ -56,18 +56,28 @@ const WeeklyPlanner = ({ onScheduleRequest, refreshTrigger }) => {
         const endDateStr = weekDates[6].toISOString().split('T')[0];
 
         try {
-            const { data, error } = await supabase
-                .from('schedule')
-                .select('*, workouts(*)')
-                .eq('user_id', user.id)
-                .gte('scheduled_date', startDateStr)
-                .lte('scheduled_date', endDateStr);
+            const [scheduleRes, logsRes] = await Promise.all([
+                supabase
+                    .from('schedule')
+                    .select('*, workouts(*)')
+                    .eq('user_id', user.id)
+                    .gte('scheduled_date', startDateStr)
+                    .lte('scheduled_date', endDateStr),
+                supabase
+                    .from('workout_logs')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .gte('started_at', `${startDateStr}T00:00:00.000Z`)
+                    .lte('started_at', `${endDateStr}T23:59:59.999Z`)
+                    .not('strava_activity_id', 'is', null) // Only fetch Strava imports for the timeline for now
+            ]);
 
-            if (error) throw error;
+            if (scheduleRes.error) throw scheduleRes.error;
+            if (logsRes.error) throw logsRes.error;
 
             // Group by date
             const groupedMap = {};
-            data?.forEach(item => {
+            scheduleRes.data?.forEach(item => {
                 if (!groupedMap[item.scheduled_date]) {
                     groupedMap[item.scheduled_date] = {
                         is_rest_day: false,
@@ -76,11 +86,31 @@ const WeeklyPlanner = ({ onScheduleRequest, refreshTrigger }) => {
                 }
                 if (item.is_rest_day) {
                     groupedMap[item.scheduled_date].is_rest_day = true;
-                    // Keep the ID around so we can delete the rest day config if needed
                     groupedMap[item.scheduled_date].rest_day_id = item.id;
                 } else if (item.workouts) {
-                    groupedMap[item.scheduled_date].items.push(item);
+                    groupedMap[item.scheduled_date].items.push({ ...item, is_strava: false });
                 }
+            });
+
+            // Merge Strava Logs
+            logsRes.data?.forEach(log => {
+                const dateStr = log.started_at.split('T')[0];
+                if (!groupedMap[dateStr]) {
+                    groupedMap[dateStr] = { is_rest_day: false, items: [] };
+                }
+                const timeStr = log.started_at.split('T')[1].substring(0, 5); // "HH:MM"
+                groupedMap[dateStr].items.push({
+                    id: log.id,
+                    scheduled_time: `${timeStr}:00`,
+                    is_strava: true,
+                    workouts: {
+                        id: log.id,
+                        title: log.external_title || 'Cardio Activity',
+                        duration_minutes: Math.round(log.moving_time_seconds / 60)
+                    },
+                    distance_meters: log.distance_meters,
+                    activity_type: log.activity_type
+                });
             });
 
             setScheduleMap(groupedMap);
@@ -275,8 +305,13 @@ const WeeklyPlanner = ({ onScheduleRequest, refreshTrigger }) => {
                                     renderedItems.push(
                                         <div
                                             key={item.id}
-                                            onClick={() => navigate(`/workout/${item.workouts?.id}`)}
-                                            className="absolute right-4 rounded-[16px] bg-[#F2EDE4] border border-[#E3C7A1]/40 p-3 hover:bg-sikan-gold/20 transition-all cursor-pointer group flex flex-col shadow-sm pointer-events-auto"
+                                            onClick={() => item.is_strava ? null : navigate(`/workout/${item.workouts?.id}`)}
+                                            className={clsx(
+                                                "absolute right-4 rounded-[16px] border p-3 transition-all cursor-pointer group flex flex-col shadow-sm pointer-events-auto",
+                                                item.is_strava 
+                                                    ? "bg-[#FC5200]/5 border-[#FC5200]/30 hover:bg-[#FC5200]/10" 
+                                                    : "bg-[#F2EDE4] border-[#E3C7A1]/40 hover:bg-sikan-gold/20"
+                                            )}
                                             style={{
                                                 top: `${item.topOffset + 8}px`, // +8 for the mt-2 offset we added above
                                                 height: `${item.heightPx}px`,
@@ -286,20 +321,23 @@ const WeeklyPlanner = ({ onScheduleRequest, refreshTrigger }) => {
                                             }}
                                         >
                                             <div className="flex justify-between items-start">
-                                                <h4 className="text-sikan-olive font-bold text-sm leading-tight group-hover:text-sikan-dark transition-colors truncate pr-2">
-                                                    {item.workouts?.title}
+                                                <h4 className={clsx("font-bold text-sm leading-tight transition-colors truncate pr-2", item.is_strava ? "text-[#FC5200] group-hover:text-amber-900" : "text-sikan-olive group-hover:text-sikan-dark")}>
+                                                    {item.workouts?.title} {item.is_strava && "🏃"}
                                                 </h4>
-                                                <button
-                                                    onClick={(e) => handleDeleteSchedule(item.id, e)}
-                                                    className="text-sikan-muted hover:text-rose-500 bg-sikan-card/50 transition-colors rounded-full p-1 opacity-0 group-hover:opacity-100 shrink-0 shadow-sm border border-sikan-border/50"
-                                                >
-                                                    <Trash2 size={12} />
-                                                </button>
+                                                {!item.is_strava && (
+                                                    <button
+                                                        onClick={(e) => handleDeleteSchedule(item.id, e)}
+                                                        className="text-sikan-muted hover:text-rose-500 bg-sikan-card/50 transition-colors rounded-full p-1 opacity-0 group-hover:opacity-100 shrink-0 shadow-sm border border-sikan-border/50"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                )}
                                             </div>
                                             {item.heightPx >= 60 && (
-                                                <div className="text-[10px] font-bold text-[#A47146] flex items-center gap-1 mt-1">
+                                                <div className={clsx("text-[10px] font-bold flex items-center gap-1 mt-1", item.is_strava ? "text-[#FC5200]/80" : "text-[#A47146]")}>
                                                     <Clock size={10} />
-                                                    {item.startH}:{item.startM === 0 ? '00' : item.startM.toString().padStart(2, '0')} ({item.workouts?.duration_minutes || 45}m)
+                                                    {item.startH}:{item.startM === 0 ? '00' : item.startM.toString().padStart(2, '0')} 
+                                                    {item.is_strava ? ` (${(item.distance_meters / 1000).toFixed(2)}km)` : ` (${item.workouts?.duration_minutes || 45}m)`}
                                                 </div>
                                             )}
                                         </div>
