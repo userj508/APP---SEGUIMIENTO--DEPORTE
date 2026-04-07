@@ -66,8 +66,9 @@ const Dashboard = () => {
                 const totalDistanceKm = (totalDistanceMeters / 1000).toFixed(1);
 
                 // 3b. Calculate Volume per Workout (last 10)
+                const safeLogs = logs || [];
                 const volumeData = [];
-                const last10Workouts = logs?.slice(0, 10).reverse() || [];
+                const last10Workouts = safeLogs.slice(0, 10).reverse();
                 
                 last10Workouts.forEach(log => {
                     let totalVolume = 0;
@@ -96,10 +97,11 @@ const Dashboard = () => {
                 currentDate.setHours(0, 0, 0, 0);
 
                 // Create a Set of all unique local dates the user worked out
-                const activeDates = new Set(logs?.map(log => {
+                const mappedDates = (logs || []).map(log => {
                     const d = new Date(log.completed_at);
                     return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-                }));
+                });
+                const activeDates = new Set(mappedDates);
 
                 // Check streak backwards from today
                 for (let i = 0; i < 365; i++) {
@@ -204,7 +206,8 @@ const Dashboard = () => {
                     .sort((a, b) => b.A - a.A)
                     .slice(0, 6); // Top 6 for a clean hexagon radar
 
-                const maxCategoryCount = Math.max(...radarData.map(d => d.A), 1);
+                const counts = radarData.map(d => d.A);
+                const maxCategoryCount = counts.length > 0 ? Math.max(...counts) : 1;
                 radarData.forEach(d => d.fullMark = maxCategoryCount);
 
 
