@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Flame, Clock, Activity, Calendar, Loader2, TrendingUp } from 'lucide-react';
+import { Trophy, Flame, Clock, Activity, Calendar, Loader2, TrendingUp, Target, Map } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import ExerciseProgressModal from '../components/ExerciseProgressModal';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid } from 'recharts';
 
 const Dashboard = () => {
     const { user } = useAuth();
@@ -12,7 +13,10 @@ const Dashboard = () => {
         totalSessions: 0,
         totalDurationMinutes: 0,
         currentStreak: 0,
+        totalDistanceKm: 0,
         weeklyData: [],
+        volumeData: [],
+        radarData: [],
         recentMilestones: [],
         performedExercises: []
     });
@@ -23,10 +27,14 @@ const Dashboard = () => {
         const loadDashboardData = async () => {
             setLoading(true);
             try {
-                // 1. Fetch Completed Workout Logs for user
+                // 1. Fetch Completed Workout Logs for user (now including exercise_logs for volume)
                 const { data: logs, error } = await supabase
                     .from('workout_logs')
-                    .select('*, workouts(title)')
+                    .select(`
+                        *,
+                        workouts(title),
+                        exercise_logs(weight_kg, reps_completed, is_completed)
+                    `)
                     .eq('user_id', user.id)
                     .eq('status', 'completed')
                     .order('completed_at', { ascending: false });
@@ -36,16 +44,49 @@ const Dashboard = () => {
                 // 2. Calculate Total Sessions
                 const totalSessions = logs?.length || 0;
 
-                // 3. Calculate Total Duration
+                // 3. Calculate Total Duration & Total Cardo Distance
                 let totalMin = 0;
+                let totalDistanceMeters = 0;
                 logs?.forEach(log => {
-                    if (log.started_at && log.completed_at) {
+                    if (log.started_at && log.completed_at && !log.moving_time_seconds) {
                         const start = new Date(log.started_at);
                         const end = new Date(log.completed_at);
                         const diffMins = Math.floor((end - start) / (1000 * 60));
                         if (diffMins > 0 && diffMins < 600) { // sanity check
                             totalMin += diffMins;
                         }
+                    } else if (log.moving_time_seconds) {
+                        totalMin += Math.floor(log.moving_time_seconds / 60);
+                    }
+                    
+                    if (log.distance_meters) {
+                        totalDistanceMeters += log.distance_meters;
+                    }
+                });
+                const totalDistanceKm = (totalDistanceMeters / 1000).toFixed(1);
+
+                // 3b. Calculate Volume per Workout (last 10)
+                const volumeData = [];
+                const last10Workouts = logs?.slice(0, 10).reverse() || [];
+                
+                last10Workouts.forEach(log => {
+                    let totalVolume = 0;
+                    if (log.exercise_logs) {
+                        log.exercise_logs.forEach(exLog => {
+                            if (exLog.is_completed) {
+                                totalVolume += (exLog.weight_kg || 0) * (exLog.reps_completed || 0);
+                            }
+                        });
+                    }
+                    
+                    // Only push if it was a strength workout (volume > 0 or it has logs)
+                    if (totalVolume > 0 || (log.exercise_logs && log.exercise_logs.length > 0)) {
+                        const d = new Date(log.completed_at);
+                        volumeData.push({
+                            name: log.workouts?.title?.substring(0, 10) || 'Custom',
+                            date: `${d.getDate()}/${d.getMonth()+1}`,
+                            vol: totalVolume
+                        });
                     }
                 });
 
@@ -127,28 +168,54 @@ const Dashboard = () => {
                 if (exerciseError) console.error("Error fetching exercise logs:", exerciseError);
 
                 const uniqueExercisesMap = new Map();
+                const categoryDistributionMap = new Map();
+
                 if (exerciseLogs) {
                     exerciseLogs.forEach(log => {
+                        // Unique exercises tracking
                         if (!uniqueExercisesMap.has(log.exercise_id) && log.exercises) {
                             uniqueExercisesMap.set(log.exercise_id, {
                                 id: log.exercise_id,
                                 name: log.exercises.name,
-                                category: log.exercises.category || 'Exercise',
+                                category: log.exercises.category || 'Other',
                                 logCount: 1
                             });
                         } else if (log.exercises) {
                             uniqueExercisesMap.get(log.exercise_id).logCount++;
                         }
+
+                        // Category tracking for radar chart
+                        if (log.exercises) {
+                            const cat = log.exercises.category || 'Other';
+                            // Exclude Rest/System categories from distribution
+                            if (cat !== 'Rest' && cat !== 'System') {
+                                categoryDistributionMap.set(cat, (categoryDistributionMap.get(cat) || 0) + 1);
+                            }
+                        }
                     });
                 }
                 const performedExercises = Array.from(uniqueExercisesMap.values()).sort((a, b) => b.logCount - a.logCount);
+
+                let radarData = Array.from(categoryDistributionMap.entries())
+                    .map(([category, count]) => ({
+                        subject: category,
+                        A: count
+                    }))
+                    .sort((a, b) => b.A - a.A)
+                    .slice(0, 6); // Top 6 for a clean hexagon radar
+
+                const maxCategoryCount = Math.max(...radarData.map(d => d.A), 1);
+                radarData.forEach(d => d.fullMark = maxCategoryCount);
 
 
                 setStats({
                     totalSessions,
                     totalDurationMinutes: totalMin,
                     currentStreak: streak,
+                    totalDistanceKm,
                     weeklyData: weekDays,
+                    volumeData,
+                    radarData,
                     recentMilestones: milestones,
                     performedExercises
                 });
@@ -221,7 +288,7 @@ const Dashboard = () => {
                         <span className="text-xs text-sikan-muted font-bold ml-0.5">m</span>
                     </div>
                 </div>
-                <div className="bg-sikan-card p-5 rounded-[20px] border border-sikan-border shadow-sm flex items-center justify-between col-span-2">
+                <div className="bg-sikan-card p-5 rounded-[20px] border border-sikan-border shadow-sm flex items-center justify-between">
                     <div>
                         <span className="text-[10px] text-sikan-muted font-bold uppercase tracking-widest block mb-1">Current Streak</span>
                         <div className="flex items-baseline gap-2">
@@ -232,6 +299,116 @@ const Dashboard = () => {
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center border shadow-inner ${stats.currentStreak > 0 ? 'bg-[#FFEED9] text-[#A47146] border-[#E3C7A1]' : 'bg-[#EAE4DC] text-sikan-muted border-sikan-border'}`}>
                         <Flame size={20} className="fill-current" />
                     </div>
+                </div>
+                <div className="bg-sikan-card p-5 rounded-[20px] border border-sikan-border shadow-sm flex items-center justify-between">
+                    <div>
+                        <span className="text-[10px] text-sikan-muted font-bold uppercase tracking-widest block mb-1">Cardio Dist.</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-serif font-bold tracking-tight text-sikan-dark">{stats.totalDistanceKm}</span>
+                            <span className="text-xs text-sikan-muted font-bold">Km</span>
+                        </div>
+                    </div>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#E1EEDE] text-[#4A7243] border border-[#C5DAC1] shadow-inner">
+                        <Map size={20} className="stroke-current" />
+                    </div>
+                </div>
+            </section>
+
+            {/* NEW ANALYTICS SECTION */}
+            <section className="mb-10">
+                <div className="flex justify-between items-center mb-5">
+                    <h2 className="text-lg font-serif font-bold text-sikan-dark">Performance Analytics</h2>
+                </div>
+
+                {/* Radar Chart: Zonas Entrenadas */}
+                <div className="bg-sikan-card border border-sikan-border rounded-[24px] p-5 mb-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Target size={16} className="text-sikan-olive" />
+                        <h3 className="text-sm font-bold text-sikan-dark">Muscle Zone Distribution</h3>
+                    </div>
+                    <p className="text-[11px] text-sikan-muted font-medium mb-6">Percentage of exercises dedicated to each body part.</p>
+                    
+                    {stats.radarData && stats.radarData.length > 2 ? (
+                        <div className="h-[250px] w-full -ml-3">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={stats.radarData}>
+                                    <PolarGrid stroke="#EAE4DC" />
+                                    <PolarAngleAxis 
+                                        dataKey="subject" 
+                                        tick={{ fill: '#7C8C77', fontSize: 11, fontWeight: 'bold' }} 
+                                    />
+                                    <Radar 
+                                        name="Sets" 
+                                        dataKey="A" 
+                                        stroke="#8A9A5B" 
+                                        fill="#8A9A5B" 
+                                        fillOpacity={0.4} 
+                                    />
+                                </RadarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : (
+                        <div className="h-[200px] flex items-center justify-center text-xs font-bold text-sikan-muted border border-dashed border-sikan-border rounded-xl">
+                            Not enough data to calculate zones
+                        </div>
+                    )}
+                </div>
+
+                {/* Area Chart: Cargas de Fuerza */}
+                <div className="bg-sikan-card border border-sikan-border rounded-[24px] p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp size={16} className="text-sikan-olive" />
+                        <h3 className="text-sm font-bold text-sikan-dark">Workload Progression</h3>
+                    </div>
+                    <p className="text-[11px] text-sikan-muted font-medium mb-6">Total volume lifted (Sets x Reps x Weight) over recent workouts.</p>
+                    
+                    {stats.volumeData && stats.volumeData.length > 1 ? (
+                        <div className="h-[220px] w-full -ml-5 mt-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={stats.volumeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorVol" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#8A9A5B" stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor="#8A9A5B" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE4DC" />
+                                    <XAxis 
+                                        dataKey="date" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fill: '#7C8C77', fontSize: 10, fontWeight: 'bold' }} 
+                                        dy={10}
+                                    />
+                                    <YAxis 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fill: '#7C8C77', fontSize: 10 }}
+                                        tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(1)}k` : value}
+                                    />
+                                    <RechartsTooltip 
+                                        contentStyle={{ backgroundColor: '#FAF8F5', borderRadius: '12px', border: '1px solid #EAE4DC', fontSize: '12px', fontWeight: 'bold', color: '#2A3A2F' }}
+                                        itemStyle={{ color: '#8A9A5B' }}
+                                        formatter={(value) => [`${value} kg`, 'Volume']}
+                                        labelStyle={{ color: '#7C8C77', marginBottom: '4px' }}
+                                    />
+                                    <Area 
+                                        type="monotone" 
+                                        dataKey="vol" 
+                                        stroke="#8A9A5B" 
+                                        strokeWidth={3}
+                                        fillOpacity={1} 
+                                        fill="url(#colorVol)" 
+                                        activeDot={{ r: 6, fill: '#8A9A5B', stroke: '#FFF', strokeWidth: 2 }}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : (
+                        <div className="h-[150px] flex items-center justify-center text-xs font-bold text-sikan-muted border border-dashed border-sikan-border rounded-xl">
+                            Complete strength workouts to see volume progression
+                        </div>
+                    )}
                 </div>
             </section>
 
