@@ -190,7 +190,7 @@ const WeeklyPlanner = ({ onScheduleRequest, refreshTrigger }) => {
                     <div>
                         <h3 className="font-bold font-serif text-lg text-sikan-dark">Timeline</h3>
                         <p className="text-[11px] font-bold text-sikan-muted uppercase tracking-widest">
-                            {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                            {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                         </p>
                     </div>
                     <button
