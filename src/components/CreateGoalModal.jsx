@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, X, PlusCircle, AlignLeft, Calendar } from 'lucide-react';
+import { Target, X, PlusCircle, AlignLeft, Calendar, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
