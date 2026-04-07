@@ -206,7 +206,7 @@ const ExerciseProgressModal = ({ exercise, onClose }) => {
                                         const isRecord = session.maxWeightInSession === highestWeightAllTime;
 
                                         return (
-                                            <div key={i} className="flex flex-col items-center gap-2 min-w-[32px] group">
+                                            <div key={i} className="flex flex-col items-center gap-2 min-w-[32px] h-full justify-end group">
                                                 <div className="flex flex-col items-center w-full justify-end h-full">
                                                     <span className="text-[10px] text-sikan-dark font-bold opacity-0 group-hover:opacity-100 transition-opacity mb-1 whitespace-nowrap">
                                                         {session.maxWeightInSession}{isCardio ? 'km' : 'kg'}
