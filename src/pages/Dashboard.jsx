@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Flame, Clock, Activity, Calendar, Loader2, TrendingUp, Target, Map } from 'lucide-react';
+import { Trophy, Flame, Clock, Activity, Calendar, Loader2, TrendingUp, Target, Map as MapIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import ExerciseProgressModal from '../components/ExerciseProgressModal';
@@ -312,7 +312,7 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#E1EEDE] text-[#4A7243] border border-[#C5DAC1] shadow-inner">
-                        <Map size={20} className="stroke-current" />
+                        <MapIcon size={20} className="stroke-current" />
                     </div>
                 </div>
             </section>
