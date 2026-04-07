@@ -21,6 +21,8 @@ const ActiveWorkout = () => {
     const [isCelebratingSet, setIsCelebratingSet] = useState(false);
     const [exercises, setExercises] = useState([]);
     const [workoutTitle, setWorkoutTitle] = useState("Workout Segment");
+    const [workoutType, setWorkoutType] = useState('Strength');
+    const [cardioDistance, setCardioDistance] = useState(0);
 
     // --- INITIALIZATION ---
     useEffect(() => {
@@ -42,11 +44,14 @@ const ActiveWorkout = () => {
             try {
                 const { data: workout } = await supabase
                     .from('workouts')
-                    .select('title')
+                    .select('title, type')
                     .eq('id', workoutId)
                     .single();
 
-                if (workout) setWorkoutTitle(workout.title);
+                if (workout) {
+                    setWorkoutTitle(workout.title);
+                    setWorkoutType(workout.type);
+                }
 
                 const { data: workoutExercises, error } = await supabase
                     .from('workout_exercises')
@@ -179,7 +184,9 @@ const ActiveWorkout = () => {
                     workout_id: workoutId !== 'mock-1' ? workoutId : null,
                     status: 'completed',
                     started_at: new Date(Date.now() - elapsed * 1000).toISOString(),
-                    completed_at: new Date().toISOString()
+                    completed_at: new Date().toISOString(),
+                    distance_meters: cardioDistance > 0 ? cardioDistance * 1000 : null,
+                    moving_time_seconds: workoutType === 'Cardio' ? elapsed : null
                 })
                 .select()
                 .single();
@@ -282,8 +289,55 @@ const ActiveWorkout = () => {
         return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="animate-spin text-slate-500" size={32} /></div>;
     }
 
-    if (exercises.length === 0) {
+    if (exercises.length === 0 && workoutType !== 'Cardio') {
         return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 text-sm font-semibold">No exercises mapped to this session.</div>;
+    }
+
+    if (exercises.length === 0 && workoutType === 'Cardio') {
+        return (
+            <div className="min-h-screen bg-sikan-cream text-sikan-green flex flex-col relative font-sans selection:bg-sikan-gold/30">
+                <header className="flex justify-between items-center px-6 py-8 z-10 w-full">
+                    <Link to="/" className="w-10 h-10 flex items-center justify-start text-sikan-green/50 hover:text-sikan-green transition-colors cursor-pointer z-50">
+                        <ChevronLeft size={24} strokeWidth={1.5} />
+                    </Link>
+                    <div className="flex flex-col items-center">
+                        <span className="text-[10px] font-bold text-sikan-gold uppercase tracking-[0.2em] mb-1">SIKAN</span>
+                        <span className="font-serif text-sikan-green/80 font-medium tracking-wider text-sm">{formatTime(elapsed)}</span>
+                    </div>
+                    <div className="w-10 h-10"></div>
+                </header>
+                <main className="flex-1 flex flex-col items-center justify-center px-6">
+                    <h1 className="text-4xl font-serif text-sikan-green tracking-tight leading-tight mb-8 text-center">{workoutTitle}</h1>
+                    
+                    <div className="text-[120px] font-serif text-sikan-green leading-none mb-12 tracking-tighter">
+                        {formatTime(elapsed)}
+                    </div>
+
+                    <div className="flex flex-col items-center mb-16">
+                        <span className="text-[9px] text-sikan-green/50 uppercase font-bold tracking-[0.2em] mb-3">Distance (km)</span>
+                        <div className="flex items-center gap-3 bg-white border border-sikan-gold/20 rounded-3xl px-6 py-4 shadow-[0_4px_20px_rgba(42,58,47,0.04)]">
+                            <button onClick={() => setCardioDistance(Math.max(0, cardioDistance - 0.5))} className="text-sikan-green/40 hover:text-sikan-green transition-colors text-2xl">-</button>
+                            <input
+                                type="number"
+                                step="0.1"
+                                className="w-24 bg-transparent text-center font-serif text-4xl text-sikan-green outline-none"
+                                value={cardioDistance || ''}
+                                onChange={(e) => setCardioDistance(Number(e.target.value))}
+                                placeholder="0.0"
+                            />
+                            <button onClick={() => setCardioDistance(cardioDistance + 0.5)} className="text-sikan-green/40 hover:text-sikan-green transition-colors text-2xl">+</button>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={activeFinishWorkout}
+                        className="w-full max-w-[280px] bg-sikan-green text-sikan-cream font-bold py-5 rounded-full shadow-[0_10px_30px_rgba(42,58,47,0.15)] hover:shadow-[0_10px_40px_rgba(42,58,47,0.25)] hover:-translate-y-1 transition-all active:translate-y-0 text-sm tracking-wide"
+                    >
+                        END SESSION
+                    </button>
+                </main>
+            </div>
+        );
     }
 
     const currentExercise = exercises[activeExerciseIndex];
