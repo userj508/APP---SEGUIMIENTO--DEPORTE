@@ -296,6 +296,16 @@ const Dashboard = () => {
                 }
                 const performedExercises = Array.from(uniqueExercisesMap.values()).sort((a, b) => b.logCount - a.logCount);
 
+                const cardioLogsCount = safeLogs.filter(log => log.distance_meters && log.distance_meters > 0).length;
+                if (cardioLogsCount > 0) {
+                    performedExercises.unshift({
+                        id: 'cardio-distance-logs',
+                        name: 'Strava / Cardio Tracking',
+                        category: 'Cardio',
+                        logCount: cardioLogsCount
+                    });
+                }
+
                 let radarData = Array.from(categoryDistributionMap.entries())
                     .map(([category, count]) => ({
                         subject: category,
