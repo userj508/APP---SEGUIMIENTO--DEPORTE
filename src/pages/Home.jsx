@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Bell, Dumbbell, Apple, Flower2, ChevronRight, CheckCircle2, Moon, Plus, Activity } from 'lucide-react';
+import { Menu, Bell, Dumbbell, Apple, Flower2, ChevronRight, CheckCircle2, Moon, Plus, Activity, Target } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Section from '../components/Section';
 import clsx from 'clsx';
