@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
-const CLIENT_ID = import.meta.env.VITE_STRAVA_CLIENT_ID;
-const CLIENT_SECRET = import.meta.env.VITE_STRAVA_CLIENT_SECRET;
+const CLIENT_ID = "222057";
+const CLIENT_SECRET = "9c322a07f63c80c988e8b4cd20499cb831efdf07";
 
 /**
  * Refreshes the Strava Access Token if needed.
@@ -104,6 +104,6 @@ export const syncStravaActivities = async (userId, accessToken, refreshToken) =>
         return 0;
     } catch (error) {
         console.error("Error syncing Strava activities:", error);
-        return 0;
+        throw error;
     }
 };
